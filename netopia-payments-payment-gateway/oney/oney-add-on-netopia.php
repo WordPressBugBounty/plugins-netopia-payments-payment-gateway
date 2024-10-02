@@ -496,14 +496,12 @@ add_shortcode('oney-netopia-metoda-plata', 'oney_netopia_metoda_plata_shortcode'
 /* BEGIN CHECKOUT */
 
 // Hook into the WooCommerce payment method title filter
-add_filter('woocommerce_gateway_title', 'customize_payment_method_title', 10, 2);
+if ( !is_admin() ) {
+    add_filter('woocommerce_gateway_title', 'customize_payment_method_title', 10, 2);
+}
 
 // Function to customize the payment method title
 function customize_payment_method_title($title, $payment_method) {
-
-    if ( is_admin() ) {
-        return "";
-    }
 
     // Check if the payment method is the one you want to customize (replace 'netopiapayments' with your payment method ID)
     if ($payment_method === 'netopiapayments') {
