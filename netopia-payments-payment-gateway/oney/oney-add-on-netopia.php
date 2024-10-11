@@ -570,6 +570,10 @@ function customize_payment_method_description($gateways) {
     
     // Verify NETOPIA plugin settings from available gateways
     // if the plugin is not configured completely, return the original gateways
+    if(!isset($gateways['netopiapayments'])) {
+        return $gateways; // Return the original gateways, because "netopiapayments" is not configured yet
+        }
+        
     if(!is_array($gateways['netopiapayments']->settings['payment_methods'])) {
         return $gateways; // Return the original gateways without modifications
     }

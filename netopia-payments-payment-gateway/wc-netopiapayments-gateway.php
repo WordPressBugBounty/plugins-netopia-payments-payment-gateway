@@ -152,7 +152,7 @@ class netopiapayments extends WC_Payment_Gateway {
 		        'title'       => __( 'Payment methods', 'netopiapayments' ),
 		        'type'        => 'multiselect',
 		        'description' => __( 'Select which payment methods to accept.', 'netopiapayments' ),
-		        'default'     => '',
+		        'default'     => array('credit_card'),
 		        'options'     => array(
 		          'credit_card'	      => __( 'Credit Card', 'netopiapayments' ),
 				  'oney'  => __( 'Debit Card with Oney', 'netopiapayments' ),
