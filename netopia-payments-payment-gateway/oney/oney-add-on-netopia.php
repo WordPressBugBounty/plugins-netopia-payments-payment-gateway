@@ -259,6 +259,11 @@ function oney_450_section($display = 'none') {
     // Check if "Oney" is selected in woocommerce blocks
     
     $NtpPaymentMethod = get_option( 'woocommerce_netopiapayments_settings', [] );
+    // Payment Method is not set yet by Admin
+    if(!isset($NtpPaymentMethod['payment_methods']))
+        {
+            return;
+        }
     if(in_array('oney', $NtpPaymentMethod['payment_methods'])) {
         $display = 'block';
     } else {
@@ -573,7 +578,7 @@ function customize_payment_method_description($gateways) {
     if(!isset($gateways['netopiapayments'])) {
         return $gateways; // Return the original gateways, because "netopiapayments" is not configured yet
         }
-        
+
     if(!is_array($gateways['netopiapayments']->settings['payment_methods'])) {
         return $gateways; // Return the original gateways without modifications
     }
