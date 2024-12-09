@@ -42,7 +42,7 @@ class Netopia_Payment_Invoice
 		$attr = $elem->attributes->getNamedItem('currency');
 		if($attr == null)
 		{
-			throw new Exception('Netopia_Payment_Invoice::loadFromXml failed; currency attribute missing', self::ERROR_LOAD_FROM_XML_CURRENCY_ATTR_MISSING);
+			throw new Exception('Netopia_Payment_Invoice::loadFromXml failed; currency attribute missing', esc_html(self::ERROR_LOAD_FROM_XML_CURRENCY_ATTR_MISSING));
 		}
 		$this->currency = $attr->nodeValue;
 
@@ -153,14 +153,14 @@ class Netopia_Payment_Invoice
 	{
 		if(!($xmlDoc instanceof DOMDocument))
 		{
-			throw new Exception('', self::ERROR_INVALID_PARAMETER);
+			throw new Exception('', esc_html(self::ERROR_INVALID_PARAMETER));
 		}
 
 		$xmlInvElem = $xmlDoc->createElement('invoice');
 
 		if($this->currency == null)
 		{
-			throw new Exception('Invalid currency', self::ERROR_INVALID_CURRENCY);
+			throw new Exception('Invalid currency', esc_html(self::ERROR_INVALID_CURRENCY));
 		}
 
 		$xmlAttr 			= $xmlDoc->createAttribute('currency');

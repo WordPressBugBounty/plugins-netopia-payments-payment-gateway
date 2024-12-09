@@ -87,17 +87,17 @@ class Netopia_Payment_Address
 
         if (! ($xmlDoc instanceof DOMDocument))
         {
-            throw new Exception('', self::ERROR_INVALID_PARAMETER);
+            throw new Exception('', esc_html(self::ERROR_INVALID_PARAMETER));
         }
         
         $addrElem = $xmlDoc->createElement($nodeName);
         
         if ($this->type == null)
         {
-            throw new Exception('Invalid address type', self::ERROR_INVALID_ADDRESS_TYPE);
+            throw new Exception('Invalid address type', esc_html(self::ERROR_INVALID_ADDRESS_TYPE));
         } elseif ($this->type != self::TYPE_COMPANY && $this->type != self::TYPE_PERSON)
         {
-            throw new Exception('Invalid address type', self::ERROR_INVALID_ADDRESS_TYPE_VALUE);
+            throw new Exception('Invalid address type', esc_html(self::ERROR_INVALID_ADDRESS_TYPE_VALUE));
         }
         
         $xmlAttr = $xmlDoc->createAttribute('type');

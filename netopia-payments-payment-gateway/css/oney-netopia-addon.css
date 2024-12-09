@@ -3,7 +3,9 @@
 .oney-netopia-container-single-product {
     background:#fff;
     border: 2px solid #8bbc06;
-    display: inline-block;
+    /* display: inline-block; */
+    /* Temporary Display None */
+    display: none;             
     padding: 10px 15px;
     border-radius: 10px;
     margin-bottom: 10px;

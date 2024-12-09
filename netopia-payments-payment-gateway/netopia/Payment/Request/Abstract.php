@@ -187,8 +187,7 @@ abstract class Netopia_Payment_Request_Abstract
 	 */
 	public function __construct()
 	{
-		srand((int)(microtime(true) * 1000000));
-		$this->_requestIdentifier = md5(uniqid(rand()));
+		$this->_requestIdentifier = md5(uniqid(wp_rand(0, 1000000)));
 		$this->_objRequestParams = new stdClass();
 	}
 
@@ -240,50 +239,41 @@ abstract class Netopia_Payment_Request_Abstract
 	 * Factory the object from a encrypted xml string
 	 * @param string $envKey
 	 * @param string $encData
-	 * @param string $privateKeyFilePath
+	 * @param string $privateKeyContent
 	 * @param string $privateKeyPassword
 	 * 
 	 * @return Netopia_Payment_Request_Abstract
 	 * @throws Exception On missing xml attributes
 	 */
-	static public function factoryFromEncrypted($envKey, $encData, $privateKeyFilePath, $privateKeyPassword = null, $cipher_algo = 'rc4', $iv = null)
+	static public function factoryFromEncrypted($envKey, $encData, $privateKeyContent, $privateKeyPassword = null, $cipher_algo = 'rc4', $iv = null)
 	{
 		$privateKey = null;
 		if ($privateKeyPassword == null)
 		{
-			$privateKey = @openssl_get_privatekey($privateKeyFilePath);
-			if ($privateKey === false)
-			{
-				$privateKey = @openssl_get_privatekey("file://{$privateKeyFilePath}");
-			}
+			$privateKey = openssl_pkey_get_private($privateKeyContent);
 		}
 		else
 		{
-			$privateKey = @openssl_get_privatekey($privateKeyFilePath, $privateKeyPassword);
-			if ($privateKey === false)
-			{
-				$privateKey = @openssl_get_privatekey("file://{$privateKeyFilePath}", $privateKeyPassword);
-			}
+			$privateKey = @openssl_pkey_get_private($privateKeyContent, $privateKeyPassword);
 		}
 		if ($privateKey === false)
 		{
-			throw new Exception('Error loading private key', self::ERROR_CONFIRM_LOAD_PRIVATE_KEY);
+			throw new Exception('Error loading private key', esc_html(self::ERROR_CONFIRM_LOAD_PRIVATE_KEY));
 		}
 		$srcData = base64_decode($encData);
 		if ($srcData === false)
 		{
-			@openssl_free_key($privateKey);
-			throw new Exception('Failed decoding data', self::ERROR_CONFIRM_FAILED_DECODING_DATA);
+			throw new Exception('Failed decoding data', esc_html(self::ERROR_CONFIRM_FAILED_DECODING_DATA));
 		}
 		$srcEnvKey = base64_decode($envKey);
 		if($srcEnvKey === false)
 		{
-			throw new Exception('Failed decoding envelope key', self::ERROR_CONFIRM_FAILED_DECODING_ENVELOPE_KEY);
+			throw new Exception('Failed decoding envelope key', esc_html(self::ERROR_CONFIRM_FAILED_DECODING_ENVELOPE_KEY));
 		}
 		$srcIv = base64_decode($iv);
 		if($srcIv === false)
 		{
-			throw new Exception('Failed decoding initialization vector', self::ERROR_CONFIRM_FAILED_DECODING_IV);
+			throw new Exception('Failed decoding initialization vector', esc_html(self::ERROR_CONFIRM_FAILED_DECODING_IV));
 		}
 
 		$data = null;
@@ -297,7 +287,7 @@ abstract class Netopia_Payment_Request_Abstract
 		}
 		if($result === false)
 		{
-			throw new Exception('Failed decrypting data', self::ERROR_CONFIRM_FAILED_DECRYPT_DATA);
+			throw new Exception('Failed decrypting data', esc_html(self::ERROR_CONFIRM_FAILED_DECRYPT_DATA));
 		}
 
 		return Netopia_Payment_Request_Abstract::factory($data);
@@ -316,13 +306,13 @@ abstract class Netopia_Payment_Request_Abstract
 		$elems = $xmlDoc->getElementsByTagName('order');
 		if($elems->length != 1)
 		{
-			throw new Exception('factoryFromXml order element not found', Netopia_Payment_Request_Abstract::ERROR_FACTORY_BY_XML_ORDER_ELEM_NOT_FOUND);
+			throw new Exception('factoryFromXml order element not found', esc_html(Netopia_Payment_Request_Abstract::ERROR_FACTORY_BY_XML_ORDER_ELEM_NOT_FOUND));
 		}
 		$orderElem = $elems->item(0);
 		$attr = $orderElem->attributes->getNamedItem('type');
 		if($attr == null || strlen($attr->nodeValue) == 0)
 		{
-			throw new Exception('factoryFromXml invalid payment request type=' . $attr->nodeValue, Netopia_Payment_Request_Abstract::ERROR_FACTORY_BY_XML_ORDER_TYPE_ATTR_NOT_FOUND);
+			throw new Exception('factoryFromXml invalid payment request type=' . esc_html($attr->nodeValue), esc_html(Netopia_Payment_Request_Abstract::ERROR_FACTORY_BY_XML_ORDER_TYPE_ATTR_NOT_FOUND));
 		}
 		switch ($attr->nodeValue)
 		{
@@ -357,7 +347,7 @@ abstract class Netopia_Payment_Request_Abstract
 			$objPmReq = new Netopia_Payment_Request_Bitcoin();
 			break;
 		default:
-			throw new Exception('factoryFromXml invalid payment request type=' . $attr->nodeValue, Netopia_Payment_Request_Abstract::ERROR_FACTORY_BY_XML_INVALID_TYPE);
+			throw new Exception('factoryFromXml invalid payment request type=' . esc_html($attr->nodeValue), esc_html(Netopia_Payment_Request_Abstract::ERROR_FACTORY_BY_XML_INVALID_TYPE));
 			break;
 		}
 		$objPmReq->_loadFromXml($orderElem);
@@ -414,13 +404,13 @@ abstract class Netopia_Payment_Request_Abstract
 		$xmlAttr = $elem->attributes->getNamedItem('id');
 		if($xmlAttr == null || strlen((string)$xmlAttr->nodeValue) == 0)
 		{
-			throw new Exception('Netopia_Payment_Request_Sms::_parseFromXml failed: empty order id', self::ERROR_LOAD_FROM_XML_ORDER_ID_ATTR_MISSING);
+			throw new Exception('Netopia_Payment_Request_Sms::_parseFromXml failed: empty order id', esc_html(self::ERROR_LOAD_FROM_XML_ORDER_ID_ATTR_MISSING));
 		}
 		$this->orderId = $xmlAttr->nodeValue;
 		$elems = $elem->getElementsByTagName('signature');
 		if($elems->length != 1)
 		{
-			throw new Exception('Netopia_Payment_Request_Sms::loadFromXml failed: signature is missing', self::ERROR_LOAD_FROM_XML_SIGNATURE_ELEM_MISSING);
+			throw new Exception('Netopia_Payment_Request_Sms::loadFromXml failed: signature is missing', esc_html(self::ERROR_LOAD_FROM_XML_SIGNATURE_ELEM_MISSING));
 		}
 		$xmlAttr = $elem->attributes->getNamedItem('secretcode');
 		if ($xmlAttr == null || strlen((string) $xmlAttr->nodeValue) == 0)
@@ -532,7 +522,7 @@ abstract class Netopia_Payment_Request_Abstract
 			{
 				$errorMessage .= $errorString . "\n";
 			}
-			throw new Exception($errorMessage, self::ERROR_LOAD_X509_CERTIFICATE);
+			throw new Exception(esc_html($errorMessage), esc_html(self::ERROR_LOAD_X509_CERTIFICATE));
 		}
 		$publicKeys = array(
 			$publicKey
@@ -558,7 +548,7 @@ abstract class Netopia_Payment_Request_Abstract
 				$this->outCipher 	= null;
 				$this->outIv 		= null;
 				$errorMessage 		= 'incompatible configuration PHP ' . PHP_VERSION . ' & ' . OPENSSL_VERSION_TEXT;
-				throw new Exception($errorMessage, self::ERROR_REQUIRED_CIPHER_NOT_AVAILABLE);
+				throw new Exception(esc_html($errorMessage), esc_html(self::ERROR_REQUIRED_CIPHER_NOT_AVAILABLE));
 			}
 		}
 		$opensslCipherMethods = openssl_get_cipher_methods();
@@ -576,7 +566,7 @@ abstract class Netopia_Payment_Request_Abstract
 			$this->outCipher 	= null;
 			$this->outIv 		= null;
 			$errorMessage 		= '`' . $cipher_algo . '` required cipher is not available';
-			throw new Exception($errorMessage, self::ERROR_REQUIRED_CIPHER_NOT_AVAILABLE);
+			throw new Exception(esc_html($errorMessage), esc_html(self::ERROR_REQUIRED_CIPHER_NOT_AVAILABLE));
 		}
 		if($this->ipnCipher === null)
 		{
@@ -604,7 +594,7 @@ abstract class Netopia_Payment_Request_Abstract
 			{
 				$errorMessage .= $errorString . "\n";
 			}
-			throw new Exception($errorMessage, self::ERROR_ENCRYPT_DATA);
+			throw new Exception(esc_html($errorMessage), esc_html(self::ERROR_ENCRYPT_DATA));
 		}
 		$this->outEncData 	= base64_encode($encData);
 		$this->outEnvKey 	= base64_encode($envKeys[0]);

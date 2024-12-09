@@ -100,12 +100,12 @@ class Netopia_Payment_Request_Notify {
         }
         $attr = $elem->attributes->getNamedItem('crc');
         if ($attr == null) {
-            throw new Exception('Netopia_Payment_Request_Notify::loadFromXml failed; mandatory crc attribute missing', self::ERROR_LOAD_FROM_XML_CRC_ATTR_MISSING);
+            throw new Exception('Netopia_Payment_Request_Notify::loadFromXml failed; mandatory crc attribute missing', esc_html(self::ERROR_LOAD_FROM_XML_CRC_ATTR_MISSING));
         }
         $this->_crc = $attr->nodeValue;
         $elems = $elem->getElementsByTagName('action');
         if ($elems->length != 1) {
-            throw new Exception('Netopia_Payment_Request_Notify::loadFromXml failed; mandatory action attribute missing', self::ERROR_LOAD_FROM_XML_ACTION_ELEM_MISSING);
+            throw new Exception('Netopia_Payment_Request_Notify::loadFromXml failed; mandatory action attribute missing', esc_html(self::ERROR_LOAD_FROM_XML_ACTION_ELEM_MISSING));
         }
         $this->action = $elems->item(0)->nodeValue;
         $elems = $elem->getElementsByTagName('customer');
@@ -258,9 +258,9 @@ class Netopia_Payment_Request_Notify {
     public function createXmlElement(DOMDocument $xmlDoc) {
         $xmlNotifyElem = $xmlDoc->createElement('mobilpay');
         $attr = $xmlDoc->createAttribute('timestamp');
-        $attr->nodeValue = date('YmdHis');
+        $attr->nodeValue = gmdate('YmdHis');
         $xmlNotifyElem->appendChild($attr);
-        $this->_crc = md5(rand() . time());
+        $this->_crc = md5(wp_rand(0, time()));
         $attr = $xmlDoc->createAttribute('crc');
         $attr->nodeValue = $this->_crc;
         $xmlNotifyElem->appendChild($attr);

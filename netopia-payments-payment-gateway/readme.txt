@@ -1,17 +1,17 @@
-=== NETOPIA Payments Woocommerce Payment Gateway ===
+=== NETOPIA Payments Payment Gateway ===
 Contributors: NETOPIA
-Tags: mobilpay, woocommerce, mobilpay card, mobilpay payment gateway, mobilpay for woocommerce, mobilpay romania, mobilpay card for woocommerce, netopia, netopia payments
+Tags: netopia, mobilpay, netopia payments, netopia payment gateway, netopia for woocommerce
 Requires at least: 4.0.1
-Tested up to: 6.6.1
-Stable tag: 1.1.1
+Tested up to: 6.7
+Stable tag: 1.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-NETOPIA Payments Woocommerce Payment Gateway extends WooCommerce payment options by adding NETOPIA's Payment Gateway options.
+NETOPIA Payments Payment Gateway extends WooCommerce payment options by adding NETOPIA's Payment Gateway options.
 
 == Description ==
 
-NETOPIA Payments Woocommerce Payment Gateway extends WooCommerce payment options by adding NETOPIA's Payment Gateway options.
+NETOPIA Payments Payment Gateway extends WooCommerce payment options by adding NETOPIA's Payment Gateway options.
 
 = Features: =
 

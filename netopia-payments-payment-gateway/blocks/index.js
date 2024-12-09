@@ -2,7 +2,7 @@ const { createElement, useEffect } = window.wp.element;
 const { registerPaymentMethod, usePaymentEvent } = window.wc.wcBlocksRegistry;
 
 const ntpSettings = window.wc.wcSettings.getSetting( 'netopiapayments_data', {} );
-const ntpLabel = window.wp.htmlEntities.decodeEntities( ntpSettings.title ) || window.wp.i18n.__( 'NETOPIA Payments', 'netopiapayments' );
+const ntpLabel = window.wp.htmlEntities.decodeEntities( ntpSettings.title ) || window.wp.i18n.__( 'NETOPIA Payments', 'netopia-payments-payment-gateway' );
 
 
 let selectedPaymentMethod = 'credit_card'; // Default value

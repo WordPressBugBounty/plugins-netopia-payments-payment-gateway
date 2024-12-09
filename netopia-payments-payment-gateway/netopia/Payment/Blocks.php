@@ -19,7 +19,6 @@ final class netopiapaymentsBlocks extends AbstractPaymentMethodType {
 	public function initialize() {
 		$this->settings = get_option( 'woocommerce_netopiapayments_settings', [] );
 		$this->gateway = new netopiapaymentsBlocks();
-		// die(print_r($this->settings));
 	}
 
 	/**
@@ -135,9 +134,9 @@ final class netopiapaymentsBlocks extends AbstractPaymentMethodType {
 		
 		$checked = "";
 		$name_methods = array(
-			'credit_card'	      => __( 'Credit Card', 'netopiapayments' ),
-			'oney'	      => __( 'Oney', 'netopiapayments' ),
-			'bitcoin'  => __( 'Bitcoin', 'netopiapayments' )
+			'credit_card'	      => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
+			'oney'	      => __( 'Oney', 'netopia-payments-payment-gateway' ),
+			'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
 			);
 		
 		foreach ($paymentMethodArr as $method) {

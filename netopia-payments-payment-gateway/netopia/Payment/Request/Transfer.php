@@ -30,7 +30,7 @@ class Netopia_Payment_Request_Transfer extends Netopia_Payment_Request_Abstract
 
         if ($elems->length != 1)
         {
-            throw new Exception('Netopia_Payment_Request_Transfer::loadFromXml failed; invoice element is missing', self::ERROR_LOAD_FROM_XML_ORDER_INVOICE_ELEM_MISSING);
+            throw new Exception('Netopia_Payment_Request_Transfer::loadFromXml failed; invoice element is missing', esc_html(self::ERROR_LOAD_FROM_XML_ORDER_INVOICE_ELEM_MISSING));
         }
 
         $this->invoice = new Netopia_Payment_Invoice($elems->item(0));
@@ -42,7 +42,7 @@ class Netopia_Payment_Request_Transfer extends Netopia_Payment_Request_Abstract
 
         if (is_null($this->signature) || is_null($this->orderId) || ! ($this->invoice instanceof Netopia_Payment_Invoice))
         {
-            throw new Exception('One or more mandatory properties are invalid!', self::ERROR_PREPARE_MANDATORY_PROPERTIES_UNSET);
+            throw new Exception('One or more mandatory properties are invalid!', esc_html(self::ERROR_PREPARE_MANDATORY_PROPERTIES_UNSET));
         }
 
         $this->_xmlDoc = new DOMDocument('1.0', 'utf-8');
@@ -60,7 +60,7 @@ class Netopia_Payment_Request_Transfer extends Netopia_Payment_Request_Abstract
 
         //set timestamp attribute
         $xmlAttr = $this->_xmlDoc->createAttribute('timestamp');
-        $xmlAttr->nodeValue = date('YmdHis');
+        $xmlAttr->nodeValue = gmdate('YmdHis');
         $rootElem->appendChild($xmlAttr);
 
         $xmlElem = $this->_xmlDoc->createElement('signature');

@@ -13,6 +13,7 @@ class netopiapayments extends WC_Payment_Gateway {
 	public $live_key;
 	public $sandbox_cer;
 	public $sandbox_key;
+	public $agreement;
 
 	/**
 	 * Netopia Payment Method like SMS,.. is removed form v1.4
@@ -29,9 +30,9 @@ class netopiapayments extends WC_Payment_Gateway {
 	// Setup our Gateway's id, description and other values
 	function __construct() {
 		$this->id = "netopiapayments";
-		$this->method_title = __( "NETOPIA Payments", 'netopiapayments' );
-		$this->method_description = __( "NETOPIA Payments Payment Gateway Plug-in for WooCommerce", 'netopiapayments' );
-		$this->title = __( "NETOPIA", 'netopiapayments' );
+		$this->method_title = __( "NETOPIA Payments", 'netopia-payments-payment-gateway' );
+		$this->method_description = __( "NETOPIA Payments Payment Gateway Plug-in for WooCommerce", 'netopia-payments-payment-gateway' );
+		$this->title = __( "NETOPIA", 'netopia-payments-payment-gateway' );
 		$this->icon = NTP_PLUGIN_DIR . 'img/netopiapayments.gif';
 		$this->has_fields = true;
 		$this->notify_url        	= WC()->api_request_url( 'netopiapayments' );
@@ -63,12 +64,21 @@ class netopiapayments extends WC_Payment_Gateway {
 			// class will be used instead
 
 			add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-			if(get_option( 'woocommerce_netopiapayments_certifications' ) === 'verify-and-regenerate') {	
-				if($this->account_id) {	
-					$this->certificateVerifyRegenerate($this->account_id);	
-					delete_option( 'woocommerce_netopiapayments_certifications' );// delete Option after executed one time	
-				}	
-			}
+			// if(get_option( 'woocommerce_netopiapayments_certifications' ) === 'verify-and-regenerate') {	
+			// 	if($this->account_id) {	
+			// 		$this->certificateVerifyRegenerate($this->account_id);	
+			// 		delete_option( 'woocommerce_netopiapayments_certifications' );// delete Option after executed one time	
+			// 	}	
+			// }
+		
+		
+			// define .key and .cer as valid file for Wordpress
+			add_filter('upload_mimes', function ($mimes) {
+				$mimes['key'] = 'text/plain'; // MIME type for .key
+				$mimes['cer'] = 'text/plain'; // MIME type for .cer
+				return $mimes;
+			});	
+
 		}
 
 		add_action('woocommerce_receipt_netopiapayments', array(&$this, 'receipt_page'));
@@ -78,70 +88,70 @@ class netopiapayments extends WC_Payment_Gateway {
 	public function init_form_fields() {
 		$this->form_fields = array(			
 			'enabled' => array(
-				'title'		=> __( 'Enable / Disable', 'netopiapayments' ),
-				'label'		=> __( 'Enable this payment gateway', 'netopiapayments' ),
+				'title'		=> __( 'Enable / Disable', 'netopia-payments-payment-gateway' ),
+				'label'		=> __( 'Enable this payment gateway', 'netopia-payments-payment-gateway' ),
 				'type'		=> 'checkbox',
 				'default'	=> 'no',
 			),
 			'environment' => array(
-				'title'		=> __( 'NETOPIA Payments Test Mode', 'netopiapayments' ),
-				'label'		=> __( 'Enable Test Mode', 'netopiapayments' ),
+				'title'		=> __( 'NETOPIA Payments Test Mode', 'netopia-payments-payment-gateway' ),
+				'label'		=> __( 'Enable Test Mode', 'netopia-payments-payment-gateway' ),
 				'type'		=> 'checkbox',
-				'description' => __( 'Place the payment gateway in test mode.', 'netopiapayments' ),
+				'description' => __( 'Place the payment gateway in test mode.', 'netopia-payments-payment-gateway' ),
 				'default'	=> 'no',
 			),
 			'title' => array(
-				'title'		=> __( 'Title', 'netopiapayments' ),
+				'title'		=> __( 'Title', 'netopia-payments-payment-gateway' ),
 				'type'		=> 'text',
-				'desc_tip'	=> __( 'Payment title the customer will see during the checkout process.', 'netopiapayments' ),
-				'default'	=> __( 'NETOPIA Payments', 'netopiapayments' ),
+				'desc_tip'	=> __( 'Payment title the customer will see during the checkout process.', 'netopia-payments-payment-gateway' ),
+				'default'	=> __( 'NETOPIA Payments', 'netopia-payments-payment-gateway' ),
 			),
 			'description' => array(
-				'title'		=> __( 'Description', 'netopiapayments' ),
+				'title'		=> __( 'Description', 'netopia-payments-payment-gateway' ),
 				'type'		=> 'textarea',
-				'desc_tip'	=> __( 'Payment description the customer will see during the checkout process.', 'netopiapayments' ),
+				'desc_tip'	=> __( 'Payment description the customer will see during the checkout process.', 'netopia-payments-payment-gateway' ),
 				'css'		=> 'max-width:350px;',
 			),
 			'default_status' => array(
-				'title'		=> __( 'Default status', 'netopiapayments' ),
+				'title'		=> __( 'Default status', 'netopia-payments-payment-gateway' ),
 				'type'		=> 'select',
-				'desc_tip'	=> __( 'Default status of transaction.', 'netopiapayments' ),
+				'desc_tip'	=> __( 'Default status of transaction.', 'netopia-payments-payment-gateway' ),
 				'default'	=> 'processing',
 				'options' => array(
-					'completed' => __('Completed'),
-					'processing' => __('Processing'),
+					'completed' => __('Completed', 'netopia-payments-payment-gateway'),
+					'processing' => __('Processing', 'netopia-payments-payment-gateway'),
 				),
 				'css'		=> 'max-width:350px;',
 			),
 			'key_setting' => array(
-                'title'       => __( 'Login to Netopia and go to Admin-> Conturi de comerciant->Modifica (iconita creionas)->tab-ul Setari securitate', 'netopiapayments' ),
+                'title'       => __( 'Login to NETOPIA Platform and go to <i>"Puncte de vânzare"</i> -> <i>"Opțiuni"</i> (iconița cu 3 puncte) -> <i>"Setări tehnice"</i>', 'netopia-payments-payment-gateway' ),
                 'type'        => 'title',
                 'description' => '',
             ),
 			'account_id' => array(
-				'title'		=> __( 'Seller Account ID', 'netopiapayments' ),
+				'title'		=> __( 'Account Signature', 'netopia-payments-payment-gateway' ),
 				'type'		=> 'text',
-				'desc_tip'	=> __( 'This is Account ID provided by Netopia when you signed up for an account. Unique key for your seller account for the payment process.', 'netopiapayments' ),
+				'desc_tip'	=> __( 'Signature is an unique ID generated for each seller account (cont de comerciant)', 'netopia-payments-payment-gateway' ),
 			),
             'live_cer' => array(
-                'title'		=> __( 'Live public key: ', 'netopiapayments' ),
+                'title'		=> __( 'Live public key: ', 'netopia-payments-payment-gateway' ),
                 'type'		=> 'file',
-                'desc_tip'	=> is_null($this->get_option('live_cer')) ?  __( 'Download the Certificat digital mobilPay™ from Netopia and upload here', 'netopiapayments' ) : $this->get_option('live_cer'),
+                'desc_tip'	=> is_null($this->get_option('live_cer')) ?  __( 'Download the Certificat digital mobilPay™ from Netopia and upload here', 'netopia-payments-payment-gateway' ) : $this->get_option('live_cer'),
             ),
             'live_key' => array(
-                'title'		=> __( 'Live private key: ', 'netopiapayments' ),
+                'title'		=> __( 'Live private key: ', 'netopia-payments-payment-gateway' ),
                 'type'		=> 'file',
-                'desc_tip'	=> is_null($this->get_option('live_key')) ? __( 'Download the Certificat merchant account / Privated key™ from Netopia and upload here', 'netopiapayments' ) : $this->get_option('live_key'),
+                'desc_tip'	=> is_null($this->get_option('live_key')) ? __( 'Download the Certificat merchant account / Privated key™ from Netopia and upload here', 'netopia-payments-payment-gateway' ) : $this->get_option('live_key'),
             ),
             'sandbox_cer' => array(
-                'title'		=> __( 'Sandbox public key: ', 'netopiapayments' ),
+                'title'		=> __( 'Sandbox public key: ', 'netopia-payments-payment-gateway' ),
                 'type'		=> 'file',
-                'desc_tip'	=> is_null($this->get_option('sandbox_cer')) ? __( 'Download the Sandbox Certificat digital mobilPay™ from Netopia and upload here', 'netopiapayments' ) : $this->get_option('sandbox_cer'),
+                'desc_tip'	=> is_null($this->get_option('sandbox_cer')) ? __( 'Download the Sandbox Certificat digital mobilPay™ from Netopia and upload here', 'netopia-payments-payment-gateway' ) : $this->get_option('sandbox_cer'),
             ),
             'sandbox_key' => array(
-                'title'		=> __( 'Sandbox private key: ', 'netopiapayments' ),
+                'title'		=> __( 'Sandbox private key: ', 'netopia-payments-payment-gateway' ),
                 'type'		=> 'file',
-                'desc_tip'	=> is_null($this->get_option('sandbox_key')) ? __( 'Download the Sandbox Certificat merchant account / Privated key™ from Netopia and upload here', 'netopiapayments' ) : $this->get_option('sandbox_key'),
+                'desc_tip'	=> is_null($this->get_option('sandbox_key')) ? __( 'Download the Sandbox Certificat merchant account / Privated key™ from Netopia and upload here', 'netopia-payments-payment-gateway' ) : $this->get_option('sandbox_key'),
             ),
 			/**
 			 * Netopia Payment Method like SMS,.. is removed form v1.4
@@ -149,28 +159,35 @@ class netopiapayments extends WC_Payment_Gateway {
 			 * was related to this ,...
 			 */
 			'payment_methods'   => array(
-		        'title'       => __( 'Payment methods', 'netopiapayments' ),
+		        'title'       => __( 'Payment methods', 'netopia-payments-payment-gateway' ),
 		        'type'        => 'multiselect',
-		        'description' => __( 'Select which payment methods to accept.', 'netopiapayments' ),
+		        'description' => __( 'Select which payment methods to accept.', 'netopia-payments-payment-gateway' ),
 		        'default'     => array('credit_card'),
 		        'options'     => array(
-		          'credit_card'	      => __( 'Credit Card', 'netopiapayments' ),
-				  'oney'  => __( 'Debit Card with Oney', 'netopiapayments' ),
-				  'bitcoin'  => __( 'Bitcoin', 'netopiapayments' )
-		        //   'sms'			        => __('SMS' , 'netopiapayments' ),
-		        //   'bank_transfer'		      => __( 'Bank Transfer', 'netopiapayments' ),
+		          'credit_card'	      => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
+				  'oney'  => __( 'Debit Card with Oney', 'netopia-payments-payment-gateway' ),
+				  'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
+		        //   'sms'			        => __('SMS' , 'netopia-payments-payment-gateway' ),
+		        //   'bank_transfer'		      => __( 'Bank Transfer', 'netopia-payments-payment-gateway' ),
 		          ),
-		    ),	
+		    ),
+			'agreement' => array(
+				'title'		=> __( 'Agreement', 'netopia-payments-payment-gateway' ),
+				'label'		=> __( 'By checking, you agree to the creation of an additional page called "Oferta Rate Oney" in accordance with WordPress policy.', 'netopia-payments-payment-gateway' ),
+				'type'		=> 'checkbox',
+				'description' => __( 'This is optional, and you can activate the Oney option without having a separate page. Do you want to create "Oferta Rate Oney" page ? <button type="button"  id="agreeToCreateOneyPage" >Yes, Create it </button>', 'netopia-payments-payment-gateway' ),
+				'default'	=> 'no',
+			),
 			// 'sms_setting' => array(
-			// 	'title'       => __( 'For SMS Payment', 'netopiapayments' ),
+			// 	'title'       => __( 'For SMS Payment', 'netopia-payments-payment-gateway' ),
 			// 	'type'        => 'title',
 			// 	'description' => '',
 			// ),	
 			// 'service_id' => array(
-			// 	'title'		=> __( 'Product/service code: ', 'netopiapayments' ),
+			// 	'title'		=> __( 'Product/service code: ', 'netopia-payments-payment-gateway' ),
 			// 	'type'		=> 'text',
-			// 	'desc_tip'	=> __( 'This is Service Code provided by Netopia when you signed up for an account.', 'netopiapayments' ),
-			// 	'description' => __( 'Login to Netopia and go to Admin -> Conturi de comerciant -> Produse si servicii -> Semnul plus', 'netopiapayments' ),
+			// 	'desc_tip'	=> __( 'This is Service Code provided by Netopia when you signed up for an account.', 'netopia-payments-payment-gateway' ),
+			// 	'description' => __( 'Login to Netopia and go to Admin -> Conturi de comerciant -> Produse si servicii -> Semnul plus', 'netopia-payments-payment-gateway' ),
 			// ),
 		);		
 	}
@@ -182,7 +199,7 @@ class netopiapayments extends WC_Payment_Gateway {
 	function payment_fields() {
 		// Description of payment method from settings
       	if ( $this->description ) { ?>
-        	<p><?php echo $this->description; ?></p>
+        	<p><?php echo esc_html($this->description); ?></p>
   		<?php }
   		if ( $this->payment_methods ) {  
   			$payment_methods = $this->payment_methods;	
@@ -190,11 +207,11 @@ class netopiapayments extends WC_Payment_Gateway {
   			$payment_methods = array('credit_card');
   		}
   		$name_methods = array(
-		          'credit_card'	      => __( 'Credit Card', 'netopiapayments' ),
-		          'oney'	      => __( 'Oney', 'netopiapayments' ),
-		          'bitcoin'  => __( 'Bitcoin', 'netopiapayments' )
-				//   'sms'			        => __('SMS' , 'netopiapayments' ),
-		        //   'bank_transfer'		      => __( 'Bank Transfer', 'netopiapayments' ),
+		          'credit_card'	      => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
+		          'oney'	      => __( 'Oney', 'netopia-payments-payment-gateway' ),
+		          'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
+				//   'sms'			        => __('SMS' , 'netopia-payments-payment-gateway' ),
+		        //   'bank_transfer'		      => __( 'Bank Transfer', 'netopia-payments-payment-gateway' ),
 		          );
   		?>
   		<div id="netopia-methods">
@@ -206,7 +223,7 @@ class netopiapayments extends WC_Payment_Gateway {
 					if($method != 'oney') {
 						?>
 							<li>
-								<input type="radio" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-<?=$method?>" value="<?=$method?>" <?php echo $checked; ?> /><label for="inspire-use-stored-payment-info-yes" style="display: inline;"><?php echo $name_methods[$method] ?></label>
+								<input type="radio" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-<?php echo esc_attr($method); ?>" value="<?php esc_attr(method); ?>" <?php echo esc_attr($checked); ?> /><label for="inspire-use-stored-payment-info-yes" style="display: inline;"><?php echo esc_html($name_methods[$method]); ?></label>
 							</li>
 						<?php
 					} elseif($method == 'oney' && !in_array('credit_card', $payment_methods)) {
@@ -256,10 +273,7 @@ class netopiapayments extends WC_Payment_Gateway {
 		global $woocommerce;
 
 		// Retrieve the selected payment method
-		$method = isset($_POST['netopia_method_pay']) ? sanitize_text_field($_POST['netopia_method_pay']) : ''; // Should be have this value in both classic & WooCommerce Blocks
-
-		// Retrieve the selected payment method from order meta
-		// $method = $order->get_meta('_netopia_method_pay', true);
+		$method = isset($_POST['netopia_method_pay']) ? sanitize_text_field(wp_unslash($_POST['netopia_method_pay'])) : ''; // Should be have this value in both classic & WooCommerce Blocks
 
 		$order = new WC_Order( $order_id );	
 
@@ -291,7 +305,7 @@ class netopiapayments extends WC_Payment_Gateway {
 		$method_pay            = $this->get_post( 'netopia_method_pay' );
 		// Check card number
 		if ( empty( $method_pay ) ) {
-			wc_add_notice( __( 'Alege metoda de plata.', 'netopiapayments' ), $notice_type = 'error' );
+			wc_add_notice( __( 'Alege metoda de plata.', 'netopia-payments-payment-gateway' ), $notice_type = 'error' );
 			return false;
 		}
 		return true;
@@ -303,9 +317,96 @@ class netopiapayments extends WC_Payment_Gateway {
 	function receipt_page($order){
 		$customer_order = new WC_Order( $order );
 		$order_amount = sprintf('%.2f',$customer_order->get_total());
-		echo '<p>'.__('Multumim pentru comanda, te redirectionam in pagina de plata NETOPIA payments.', 'netopiapayments').'</p>';
-		echo '<p><strong>'.__('Total', 'netopiapayments').": ".$customer_order->get_total().' '.$customer_order->get_currency().'</strong></p>';
-		echo $this->generate_netopia_form($order);
+		echo '<p>'.esc_html(__('Multumim pentru comanda, te redirectionam in pagina de plata NETOPIA payments.', 'netopia-payments-payment-gateway')).'</p>';
+		echo '<p><strong>'.esc_html(__('Total', 'netopia-payments-payment-gateway').": ".sanitize_text_field($customer_order->get_total()).' '.sanitize_text_field($customer_order->get_currency())).'</strong></p>';
+		
+		// Output of sanitized form 
+		$generatedNetopiaForm = $this->generate_netopia_form($order);
+		if(!empty($generatedNetopiaForm)) {
+			$allowed_tags = array(
+				'div' => array(
+					'class' => true,
+					'id' => true,
+					'style' => true,
+					'data-*' => true, // Allow any data-* attributes
+				),
+				'span' => array(
+					'class' => true,
+					'id' => true,
+					'style' => true,
+				),
+				'p' => array(
+					'class' => true,
+					'style' => true,
+				),
+				'strong' => array(), // Allow bold text
+				'img' => array(
+					'src' => true,
+					'title' => true,
+					'alt' => true,
+					'style' => true,
+					'width' => true,
+					'height' => true,
+				),
+				'script' => array(
+					'type' => true, // Optional: Allow specifying script type
+				),
+				'a' => array(
+					'href' => true,
+					'title' => true,
+					'class' => true,
+				),
+				'form' => array(
+					'action' => true,
+					'method' => true,
+					'id' => true,
+					'class' => true,
+				),
+				'input' => array(
+					'type' => true,
+					'name' => true,
+					'value' => true,
+					'class' => true,
+					'id' => true,
+				),
+				'select' => array(
+					'name' => true,
+					'id' => true,
+					'class' => true,
+				),
+				'option' => array(
+					'value' => true,
+				),
+				'ul' => array(
+					'class' => true,
+				),
+				'li' => array(
+					'class' => true,
+				),
+				'table' => array(
+					'class' => true,
+					'style' => true,
+				),
+				'tr' => array(
+					'class' => true,
+					'style' => true,
+				),
+				'td' => array(
+					'class' => true,
+					'style' => true,
+				),
+				'th' => array(
+					'class' => true,
+					'style' => true,
+				),
+				'button' => array(
+					'type' => true,
+					'class' => true,
+					'id' => true,
+				),
+			);			
+			echo wp_kses($generatedNetopiaForm, $allowed_tags);
+		}
 	}
 
 	/**
@@ -323,25 +424,27 @@ class netopiapayments extends WC_Payment_Gateway {
 						   ? 'https://sandboxsecure.mobilpay.ro/'
 						   : 'https://secure.mobilpay.ro/';
 		if ($this->environment == 'yes') {
-			$x509FilePath = plugin_dir_path( __FILE__ ).'netopia/certificate/sandbox.'.$this->account_id.'.public.cer';
+			// $x509FilePath = plugin_dir_path( __FILE__ ).'netopia/certificate/sandbox.'.$this->account_id.'.public.cer';
+			$x509FileContent = get_option('woocommerce_netopiapayments_sandbox_cer_content', false);
 		}
 		else {
-			$x509FilePath = plugin_dir_path( __FILE__ ).'netopia/certificate/live.'.$this->account_id.'.public.cer';
+			// $x509FilePath = plugin_dir_path( __FILE__ ).'netopia/certificate/live.'.$this->account_id.'.public.cer';
+			$x509FileContent = get_option('woocommerce_netopiapayments_live_cer_content', false);
 		}
-
+		
 		require_once 'netopia/Payment/Request/Abstract.php';		
 		require_once 'netopia/Payment/Invoice.php';
 		require_once 'netopia/Payment/Address.php';
 
 		// Chosen Payment METHOD of NETOPIA (BTC , CARD ,...)
-		$method = $this->get_post( 'method' );
+		$method = sanitize_text_field($this->get_post( 'method' ));
 		
 		$name_methods = array(
-		          'credit_card' => __( 'Credit Card', 'netopiapayments' ),
-		          'oney' => __( 'Oney', 'netopiapayments' ),
-		          'bitcoin' => __( 'Bitcoin', 'netopiapayments' )
-				//   'sms' => __('SMS' , 'netopiapayments' ),
-		        //   'bank_transfer' => __( 'Bank Transfer', 'netopiapayments' ),
+		          'credit_card' => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
+		          'oney' => __( 'Oney', 'netopia-payments-payment-gateway' ),
+		          'bitcoin' => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
+				//   'sms' => __('SMS' , 'netopia-payments-payment-gateway' ),
+		        //   'bank_transfer' => __( 'Bank Transfer', 'netopia-payments-payment-gateway' ),
 		          );
 		switch ($method) {
 			case 'sms':		
@@ -365,9 +468,8 @@ class netopiapayments extends WC_Payment_Gateway {
 				break;
 		}
 		
-		srand((double) microtime() * 1000000);
 		$objPmReq->signature 			= $this->account_id;
-		$objPmReq->orderId 				= md5(uniqid(rand()));
+		$objPmReq->orderId 				= md5(uniqid(wp_rand(0, 1000000)));
 		$objPmReq->confirmUrl 			= $this->notify_url;
 		$objPmReq->returnUrl 			= htmlentities(WC_Payment_Gateway::get_return_url( $customer_order ));
 		
@@ -379,7 +481,7 @@ class netopiapayments extends WC_Payment_Gateway {
 			$objPmReq->invoice->details		= 'Plata pentru comanda cu ID: '.$order_id;
 
 			$billingAddress 				= new Netopia_Payment_Address();
-			$billingAddress->type			= 'person';//$_POST['billing_type'];
+			$billingAddress->type			= 'person';
 			$billingAddress->firstName		= $customer_order->get_billing_first_name();
 			$billingAddress->lastName		= $customer_order->get_billing_last_name();
 			$billingAddress->address		= $customer_order->get_billing_address_1();
@@ -390,7 +492,7 @@ class netopiapayments extends WC_Payment_Gateway {
 			$objPmReq->invoice->setBillingAddress($billingAddress);
 
 			$shippingAddress 				= new Netopia_Payment_Address();
-			$shippingAddress->type			= 'person';//$_POST['shipping_type'];
+			$shippingAddress->type			= 'person';
 			$shippingAddress->firstName		= $customer_order->get_shipping_first_name();
 			$shippingAddress->lastName		= $customer_order->get_shipping_last_name();
 			$shippingAddress->address		= $customer_order->get_shipping_address_1();
@@ -399,10 +501,13 @@ class netopiapayments extends WC_Payment_Gateway {
 			$objPmReq->invoice->setShippingAddress($shippingAddress);
 		}		
 		
+		
+		$customer_ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+
 		$objPmReq->params = array(	
 			'order_id'		=> $order_id,	
 			'customer_id'	=> $customer_order->get_user_id(),	
-			'customer_ip'	=> $_SERVER['REMOTE_ADDR'],	
+			'customer_ip'	=> $customer_ip,	
 			'method'		=> $method,	
 			'cartSummary' 	=> $this->getCartSummary(),	
 			'ntpPlugin' 	=> $this->getNtpPluginInfo(),
@@ -410,17 +515,18 @@ class netopiapayments extends WC_Payment_Gateway {
 			'wooCommerce' 	=> $this->getWooInfo()	
 		);
 		try {	
-		$objPmReq->encrypt($x509FilePath);
-		return '<form action="'.$paymentUrl.'" method="post" id="frmPaymentRedirect">
-				<input type="hidden" name="env_key" value="'.$objPmReq->getEnvKey().'"/>
-				<input type="hidden" name="data" value="'.$objPmReq->getEncData().'"/>
-				<input type="hidden" name="cipher" value="'.$objPmReq->getCipher().'"/>
-				<input type="hidden" name="iv" value="'.$objPmReq->getIv().'"/>
-				<input type="submit" class="button-alt" id="submit_netopia_payment_form" value="'.__('Plateste prin NETOPIA payments', 'netopiapayments').'" /> <a class="button cancel" href="'.$customer_order->get_cancel_order_url().'">'.__('Anuleaza comanda &amp; goleste cosul', 'netopiapayments').'</a>
+		// $objPmReq->encrypt($x509FilePath);
+		$objPmReq->encrypt($x509FileContent);
+		return '<form action="'.esc_url($paymentUrl).'" method="post" id="frmPaymentRedirect">
+				<input type="hidden" name="env_key" value="'.esc_attr($objPmReq->getEnvKey()).'"/>
+				<input type="hidden" name="data" value="'.esc_attr($objPmReq->getEncData()).'"/>
+				<input type="hidden" name="cipher" value="'.esc_attr($objPmReq->getCipher()).'"/>
+				<input type="hidden" name="iv" value="'.esc_attr($objPmReq->getIv()).'"/>
+				<input type="submit" class="button-alt" id="submit_netopia_payment_form" value="'.__('Plateste prin NETOPIA payments', 'netopia-payments-payment-gateway').'" /> <a class="button cancel" href="'.esc_url($customer_order->get_cancel_order_url()).'">'.__('Anuleaza comanda &amp; goleste cosul', 'netopia-payments-payment-gateway').'</a>
 				<script type="text/javascript">
 				jQuery(function(){
 				jQuery("body").block({
-					message: "'.__('Iti multumim pentru comanda. Te redirectionam catre NETOPIA payments pentru plata.', 'netopiapayments').'",
+					message: "'.esc_js(__('Iti multumim pentru comanda. Te redirectionam catre NETOPIA payments pentru plata.', 'netopia-payments-payment-gateway')).'",
 					overlayCSS: {
 						background		: "#fff",
 						opacity			: 0.6
@@ -439,8 +545,8 @@ class netopiapayments extends WC_Payment_Gateway {
 				</script>
 			</form>';
 		} catch (\Exception $e) {
-			echo '<p><i style="color:red">Asigura-te ca ai incarcat toate cele 4 chei de securitate, 2 pentru mediul live, 2 pentru mediul sandbox! Citeste cu atentie instructiunile din manual!</i></p>
-				 <p style="font-size:small">Ai in continuare probleme? Trimite-ne doua screenshot-uri la <a href="mailto:implementare@netopia.ro">implementare@netopia.ro</a>, unul cu setarile metodei de plata din adminul wordpress si unul cu locatia in care ai incarcat cheile (de preferat sa se vada denumirea completa a cheilor si calea completa a locatiei)</p>';
+			echo'<p><i style="color:red">'. esc_html('Asigura-te ca ai incarcat toate cele 4 chei de securitate, 2 pentru mediul live, 2 pentru mediul sandbox! Citeste cu atentie instructiunile din manual!').'</i></p>';
+			echo '<p style="font-size:small">'.esc_html('Ai in continuare probleme? Trimite-ne doua screenshot-uri pe email la departamentul de implementare, unul cu setarile metodei de plata din adminul wordpress si unul cu locatia in care ai incarcat cheile (de preferat sa se vada denumirea completa a cheilor si calea completa a locatiei)').'</p>';
 		}
 	}	
 
@@ -448,6 +554,10 @@ class netopiapayments extends WC_Payment_Gateway {
 	* Check for valid NETOPIA server callback
 	**/
 	function check_netopiapayments_response(){
+		if (is_admin()) {
+			return;
+		}
+
 		global $woocommerce;
 
 		require_once 'netopia/Payment/Request/Abstract.php';
@@ -464,231 +574,253 @@ class netopiapayments extends WC_Payment_Gateway {
 		$errorCode 		= 0;
 		$errorType		= Netopia_Payment_Request_Abstract::CONFIRM_ERROR_TYPE_NONE;
 		$errorMessage	= '';
-		$env_key    = $_POST['env_key'];
-		$data       = $_POST['data'];
+		$env_key 	= isset($_POST['env_key']) ? sanitize_text_field(wp_unslash($_POST['env_key'])) : '';
+		$data    	= isset($_POST['data']) ? $_POST['data'] : ''; // Don't sanitize encrypted data
 		$cipher     = 'rc4';
 		$iv         = null;
 		if(array_key_exists('cipher', $_POST))
 		{
-			$cipher = $_POST['cipher'];
+			$cipher = sanitize_text_field(wp_unslash($_POST['cipher']));
 			if(array_key_exists('iv', $_POST))
 			{
-				$iv = $_POST['iv'];
+				$iv = sanitize_text_field(wp_unslash($_POST['iv']));
 			}
 		}
 		
-		$msg_errors = array('16'=>'card has a risk (i.e. stolen card)', '17'=>'card number is incorrect', '18'=>'closed card', '19'=>'card is expired', '20'=>'insufficient funds', '21'=>'cVV2 code incorrect', '22'=>'issuer is unavailable', '32'=>'amount is incorrect', '33'=>'currency is incorrect', '34'=>'transaction not permitted to cardholder', '35'=>'transaction declined', '36'=>'transaction rejected by antifraud filters', '37'=>'transaction declined (breaking the law)', '38'=>'transaction declined', '48'=>'invalid request', '49'=>'duplicate PREAUTH', '50'=>'duplicate AUTH', '51'=>'you can only CANCEL a preauth order', '52'=>'you can only CONFIRM a preauth order', '53'=>'you can only CREDIT a confirmed order', '54'=>'credit amount is higher than auth amount', '55'=>'capture amount is higher than preauth amount', '56'=>'duplicate request', '99'=>'generic error');
+		// Validate Input
+		if (empty($env_key) || empty($data)) {
+			wp_die(esc_html('Missing env_key or data !'));
+		}
+
+		$msg_errors = array(
+			'16'=>'card has a risk (i.e. stolen card)', 
+			'17'=>'card number is incorrect',
+			'18'=>'closed card',
+			'19'=>'card is expired',
+			'20'=>'insufficient funds',
+			'21'=>'cVV2 code incorrect',
+			'22'=>'issuer is unavailable',
+			'32'=>'amount is incorrect',
+			'33'=>'currency is incorrect',
+			'34'=>'transaction not permitted to cardholder',
+			'35'=>'transaction declined',
+			'36'=>'transaction rejected by antifraud filters',
+			'37'=>'transaction declined (breaking the law)',
+			'38'=>'transaction declined',
+			'48'=>'invalid request',
+			'49'=>'duplicate PREAUTH',
+			'50'=>'duplicate AUTH',
+			'51'=>'you can only CANCEL a preauth order',
+			'52'=>'you can only CONFIRM a preauth order',
+			'53'=>'you can only CREDIT a confirmed order',
+			'54'=>'credit amount is higher than auth amount',
+			'55'=>'capture amount is higher than preauth amount',
+			'56'=>'duplicate request',
+			'99'=>'generic error');
 		
 		if ($this->environment == 'yes') {
-			$privateKeyFilePath 	= plugin_dir_path( __FILE__ ).'netopia/certificate/sandbox.'.$this->account_id.'private.key';
+			$privateKeyContent = get_option('woocommerce_netopiapayments_sandbox_key_content', false);
 		}
 		else {
-			$privateKeyFilePath 	= plugin_dir_path( __FILE__ ).'netopia/certificate/live.'.$this->account_id.'private.key';
+			$privateKeyContent = get_option('woocommerce_netopiapayments_live_key_content', false);
 		}
 
-		if (strcasecmp($_SERVER['REQUEST_METHOD'], 'post') == 0){
-			if(isset($_POST['env_key']) && isset($_POST['data'])){
-				try
-				{
-					$objPmReq = Netopia_Payment_Request_Abstract::factoryFromEncrypted($_POST['env_key'], $_POST['data'], $privateKeyFilePath, null, $cipher, $iv);
-					$action = $objPmReq->objPmNotify->action;
-					$params = $objPmReq->params;
-					$order = new WC_Order( $params['order_id'] );
-					$user = new WP_User( $params['customer_id'] );
-					$transaction_id = $objPmReq->objPmNotify->purchaseId;
-					if($objPmReq->objPmNotify->errorCode==0){
-						switch($action)
-			    		{
-			    			case 'confirmed':
-								#cand action este confirmed avem certitudinea ca banii au plecat din contul posesorului de card si facem update al starii comenzii si livrarea produsului
-								//update DB, SET status = "confirmed/captured"
-								$errorMessage = $objPmReq->objPmNotify->errorMessage;
-								
-								$amountorder_RON = $objPmReq->objPmNotify->originalAmount; 
-								$amount_paid = is_null($objPmReq->objPmNotify->originalAmount) ? 0:$objPmReq->objPmNotify->originalAmount;
-								
-								//original_amount -> the original amount processed;
-								//processed_amount -> the processed amount at the moment of the response. It can be lower than the original amount, ie for capturing a smaller amount or for a partial credit
-								if( $order->get_status() != 'completed' ) {
-									if( $amount_paid < $amountorder_RON ) {
-										if($this->isAllowedToChangeStatus($order)){
-											//Update the order status
-											$order->update_status('on-hold', '');
+		if (isset($_SERVER['REQUEST_METHOD']) && strcasecmp(sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD'])), 'post') == 0){
+			try
+			{
+				$objPmReq = Netopia_Payment_Request_Abstract::factoryFromEncrypted($env_key, $data, $privateKeyContent, null, $cipher, $iv);
+				$action = $objPmReq->objPmNotify->action;
+				$params = $objPmReq->params;
+				$order = new WC_Order( $params['order_id'] );
+				$user = new WP_User( $params['customer_id'] );
+				$transaction_id = $objPmReq->objPmNotify->purchaseId;
+				if($objPmReq->objPmNotify->errorCode==0){
+					switch($action)
+					{
+						case 'confirmed':
+							#cand action este confirmed avem certitudinea ca banii au plecat din contul posesorului de card si facem update al starii comenzii si livrarea produsului
+							//update DB, SET status = "confirmed/captured"
+							$errorMessage = $objPmReq->objPmNotify->errorMessage;
+							
+							$amountorder_RON = $objPmReq->objPmNotify->originalAmount; 
+							$amount_paid = is_null($objPmReq->objPmNotify->originalAmount) ? 0:$objPmReq->objPmNotify->originalAmount;
+							
+							//original_amount -> the original amount processed;
+							//processed_amount -> the processed amount at the moment of the response. It can be lower than the original amount, ie for capturing a smaller amount or for a partial credit
+							if( $order->get_status() != 'completed' ) {
+								if( $amount_paid < $amountorder_RON ) {
+									if($this->isAllowedToChangeStatus($order)){
+										//Update the order status
+										$order->update_status('on-hold', '');
 
-											//Error Note
-											$message = 'Thank you for shopping with us.<br />Your payment transaction was successful, but the amount paid is not the same as the total order amount.<br />Your order is currently on-hold.<br />Kindly contact us for more information regarding your order and payment status.';
-											$message_type = 'notice';
+										//Error Note
+										$message = 'Thank you for shopping with us.<br />Your payment transaction was successful, but the amount paid is not the same as the total order amount.<br />Your order is currently on-hold.<br />Kindly contact us for more information regarding your order and payment status.';
+										$message_type = 'notice';
 
-											//Add Customer Order Note
-											$order->add_order_note($message.'<br />Netopia Transaction ID: '.$transaction_id, 1);
+										//Add Customer Order Note
+										$order->add_order_note($message.'<br />Netopia Transaction ID: '.$transaction_id, 1);
 
-											//Add Admin Order Note
-											$order->add_order_note('Look into this order. <br />This order is currently on hold.<br />Reason: Amount paid is less than the total order amount.<br />Amount Paid was &#8358; '.$amount_paid.' RON while the total order amount is &#8358; '.$amountorder_RON.' RON<br />Netopia Transaction ID: '.$transaction_id);
+										//Add Admin Order Note
+										$order->add_order_note('Look into this order. <br />This order is currently on hold.<br />Reason: Amount paid is less than the total order amount.<br />Amount Paid was &#8358; '.$amount_paid.' RON while the total order amount is &#8358; '.$amountorder_RON.' RON<br />Netopia Transaction ID: '.$transaction_id);
 
-											// Reduce stock levels
-											wc_reduce_stock_levels($order->get_id());
+										// Reduce stock levels
+										wc_reduce_stock_levels($order->get_id());
 
-											// Empty cart
-											wc_empty_cart();
-										}
+										// Empty cart
+										wc_empty_cart();
 									}
+								}
+							else {
+								if( $order->get_status() == 'processing' ) {
+									$order->add_order_note('Plata prin NETOPIA payments<br />Transaction ID: '.$transaction_id);
+
+									//Add customer order note
+									$order->add_order_note('Plata receptionata.<br />Comanda este in curs de procesare.<br />Vom face livrarea in curand.<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+
+									// Reduce stock levels
+									wc_reduce_stock_levels($order->get_id());
+
+									// Empty cart
+									wc_empty_cart();
+
+									//$message = 'Thank you for shopping with us.<br />Your transaction was successful, payment was received.<br />Your order is currently being processed.';
+									//$message_type = 'success';
+								}
 								else {
-									if( $order->get_status() == 'processing' ) {
-					                    $order->add_order_note('Plata prin NETOPIA payments<br />Transaction ID: '.$transaction_id);
+									if( $order->has_downloadable_item() ) {
 
-					                    //Add customer order note
-					 					$order->add_order_note('Plata receptionata.<br />Comanda este in curs de procesare.<br />Vom face livrarea in curand.<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+										//Update order status
+										$order->update_status( 'completed', 'Payment received, your order is now complete.' );
 
-										// Reduce stock levels
-										wc_reduce_stock_levels($order->get_id());
+										//Add admin order note
+										$order->add_order_note('Plata prin NETOPIA payments<br />Transaction ID: '.$transaction_id);
 
-										// Empty cart
-										wc_empty_cart();
+										//Add customer order note
+										$order->add_order_note('Payment Received.<br />Your order is now complete.<br />NETOPIA Transaction ID: '.$transaction_id, 1);
 
-										//$message = 'Thank you for shopping with us.<br />Your transaction was successful, payment was received.<br />Your order is currently being processed.';
+										//$message = 'Thank you for shopping with us.<br />Your transaction was successful, payment was received.<br />Your order is now complete.';
 										//$message_type = 'success';
-					                }
-					                else {
-					                	if( $order->has_downloadable_item() ) {
 
-					                		//Update order status
-											$order->update_status( 'completed', 'Payment received, your order is now complete.' );
-
-						                    //Add admin order note
-						                    $order->add_order_note('Plata prin NETOPIA payments<br />Transaction ID: '.$transaction_id);
-
-						                    //Add customer order note
-						 					$order->add_order_note('Payment Received.<br />Your order is now complete.<br />NETOPIA Transaction ID: '.$transaction_id, 1);
-
-											//$message = 'Thank you for shopping with us.<br />Your transaction was successful, payment was received.<br />Your order is now complete.';
-											//$message_type = 'success';
-
-					                	}
-					                	else {
-
-					                		//Update order status
-											$msgDefaultStatus = ($this->default_status == 'processing') ? 'Payment received, your order is currently being processed.' : 'Payment received, your order is now complete.';
-											$order->update_status( $this->default_status, $msgDefaultStatus );
-
-											//Add admin order noote
-						                    $order->add_order_note('Plata prin NETOPIA payments<br />Transaction ID: '.$transaction_id);
-
-						                    //Add customer order note
-											$order->add_order_note($msgDefaultStatus.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
-
-											$message = 'Thank you for shopping with us.<br />Your transaction was successful, payment was received.<br />Your order is currently being processed.';
-											$message_type = 'success';
-					                	}
-
-										// Reduce stock levels
-										wc_reduce_stock_levels($order->get_id());
-
-										// Empty cart
-										wc_empty_cart();
-					                }
-					            }
-							}
-							else {}
-								break;
-							case 'paid':
-								if($this->isAllowedToChangeStatus($order)){
-									//Update order status -> to be added, but on-hold should work for now
-									$order->update_status( 'on-hold', 'Your payment is currently being processed.' );
-									//Add admin order note
-									$order->add_order_note('Payment remotely accepted via NETOPIA, make sure to capture it<br />Transaction ID: '.$transaction_id);
-								}
-								break;	
-							case 'confirmed_pending':
-								if($this->isAllowedToChangeStatus($order)){
-									//Update order status
-									$order->update_status( 'on-hold', 'Your payment is currently being processed.' );
-									//Add admin order note
-									$order->add_order_note('Payment pending via NETOPIA<br />Transaction ID: '.$transaction_id);
-								}
-								break;
-							case 'paid_pending':
-								if($this->isAllowedToChangeStatus($order)){
-									//Update order status
-									$order->update_status( 'on-hold', 'Your payment is currently being processed.' );
-									//Add admin order note
-									$order->add_order_note('Payment pending via NETOPIA<br />Transaction ID: '.$transaction_id);
-								}
-								break;
-						    case 'canceled':
-								if($this->isAllowedToChangeStatus($order)){
-									#cand action este canceled inseamna ca tranzactia este anulata. Nu facem livrare/expediere.
-									//update DB, SET status = "canceled"
-									$errorMessage = $objPmReq->objPmNotify->errorMessage;							
-
-									$message = 	'Thank you for shopping with us. <br />However, the transaction wasn\'t successful, payment wasn\'t received.';
-									//Add Customer Order Note
-									$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
-
-									//Add Admin Order Note
-									$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id);
-
-									//Update the order status
-									$order->update_status('cancelled', '');
-								}
-							    break;
-							case 'credit':
-								#cand action este credit inseamna ca banii sunt returnati posesorului de card. Daca s-a facut deja livrare, aceasta trebuie oprita sau facut un reverse. 
-								//update DB, SET status = "refunded"
-								if ($objPmReq->invoice->currency != 'RON') {
-									$rata_schimb = $objPmReq->objPmNotify->originalAmount/$objPmReq->invoice->amount;
 									}
-									else $rata_schimb = 1;
-								$refund_amount = $objPmReq->objPmNotify->processedAmount/$rata_schimb;
+									else {
 
-								$args = array( 
-									'amount' => $refund_amount,  
-									'reason' => 'Netopia call',  
-									'order_id' => $params['order_id'],  
-									'refund_id' => null,  
-									'line_items' => array(),  
-									'refund_payment' => false,  
-									'restock_items' => false  
-									 ); 
-									 
-								$refund = wc_create_refund($args);	
-								 
-								$errorMessage = $objPmReq->objPmNotify->errorMessage;
-								$message = 	'Plata rambursata.';
-								//Add Customer Order Note
-			                   	$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+										//Update order status
+										$msgDefaultStatus = ($this->default_status == 'processing') ? 'Payment received, your order is currently being processed.' : 'Payment received, your order is now complete.';
+										$order->update_status( $this->default_status, $msgDefaultStatus );
 
-			                    //Add Admin Order Note
-			                  	$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id);
+										//Add admin order noote
+										$order->add_order_note('Plata prin NETOPIA payments<br />Transaction ID: '.$transaction_id);
 
-								//Update the order status if fully refunded
-								if ($refund_amount == $objPmReq->objPmNotify->originalAmount) {
-								$order->update_status('refunded', '');
+										//Add customer order note
+										$order->add_order_note($msgDefaultStatus.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+
+										$message = 'Thank you for shopping with us.<br />Your transaction was successful, payment was received.<br />Your order is currently being processed.';
+										$message_type = 'success';
+									}
+
+									// Reduce stock levels
+									wc_reduce_stock_levels($order->get_id());
+
+									// Empty cart
+									wc_empty_cart();
 								}
-							    break;	
-			    		}
-					}else{
-						if($this->isAllowedToChangeStatus($order)){
-							$order->update_status('failed', '');
+							}
+						}
+						else {}
+							break;
+						case 'paid':
+							if($this->isAllowedToChangeStatus($order)){
+								//Update order status -> to be added, but on-hold should work for now
+								$order->update_status( 'on-hold', 'Your payment is currently being processed.' );
+								//Add admin order note
+								$order->add_order_note('Payment remotely accepted via NETOPIA, make sure to capture it<br />Transaction ID: '.$transaction_id);
+							}
+							break;	
+						case 'confirmed_pending':
+							if($this->isAllowedToChangeStatus($order)){
+								//Update order status
+								$order->update_status( 'on-hold', 'Your payment is currently being processed.' );
+								//Add admin order note
+								$order->add_order_note('Payment pending via NETOPIA<br />Transaction ID: '.$transaction_id);
+							}
+							break;
+						case 'paid_pending':
+							if($this->isAllowedToChangeStatus($order)){
+								//Update order status
+								$order->update_status( 'on-hold', 'Your payment is currently being processed.' );
+								//Add admin order note
+								$order->add_order_note('Payment pending via NETOPIA<br />Transaction ID: '.$transaction_id);
+							}
+							break;
+						case 'canceled':
+							if($this->isAllowedToChangeStatus($order)){
+								#cand action este canceled inseamna ca tranzactia este anulata. Nu facem livrare/expediere.
+								//update DB, SET status = "canceled"
+								$errorMessage = $objPmReq->objPmNotify->errorMessage;							
 
-							//Error Note
-							$message = $objPmReq->objPmNotify->errorMessage;
-							if(empty($message) && isset($msg_errors[$objPmReq->objPmNotify->errorCode])) $message = $msg_errors[$objPmReq->objPmNotify->errorCode];
-							$message_type = 'error';
+								$message = 	'Thank you for shopping with us. <br />However, the transaction wasn\'t successful, payment wasn\'t received.';
+								//Add Customer Order Note
+								$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+
+								//Add Admin Order Note
+								$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id);
+
+								//Update the order status
+								$order->update_status('cancelled', '');
+							}
+							break;
+						case 'credit':
+							#cand action este credit inseamna ca banii sunt returnati posesorului de card. Daca s-a facut deja livrare, aceasta trebuie oprita sau facut un reverse. 
+							//update DB, SET status = "refunded"
+							if ($objPmReq->invoice->currency != 'RON') {
+								$rata_schimb = $objPmReq->objPmNotify->originalAmount/$objPmReq->invoice->amount;
+								}
+								else $rata_schimb = 1;
+							$refund_amount = $objPmReq->objPmNotify->processedAmount/$rata_schimb;
+
+							$args = array( 
+								'amount' => $refund_amount,  
+								'reason' => 'Netopia call',  
+								'order_id' => $params['order_id'],  
+								'refund_id' => null,  
+								'line_items' => array(),  
+								'refund_payment' => false,  
+								'restock_items' => false  
+									); 
+									
+							$refund = wc_create_refund($args);	
+								
+							$errorMessage = $objPmReq->objPmNotify->errorMessage;
+							$message = 	'Plata rambursata.';
 							//Add Customer Order Note
 							$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
-						}						
-					}					
-				}catch(Exception $e)
-				{
-					$errorType 		= Netopia_Payment_Request_Abstract::CONFIRM_ERROR_TYPE_TEMPORARY;
-					$errorCode		= $e->getCode();
-					$errorMessage 	= $e->getMessage();
-				}
-			}else
+
+							//Add Admin Order Note
+							$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id);
+
+							//Update the order status if fully refunded
+							if ($refund_amount == $objPmReq->objPmNotify->originalAmount) {
+							$order->update_status('refunded', '');
+							}
+							break;	
+					}
+				}else{
+					if($this->isAllowedToChangeStatus($order)){
+						$order->update_status('failed', '');
+
+						//Error Note
+						$message = $objPmReq->objPmNotify->errorMessage;
+						if(empty($message) && isset($msg_errors[$objPmReq->objPmNotify->errorCode])) $message = $msg_errors[$objPmReq->objPmNotify->errorCode];
+						$message_type = 'error';
+						//Add Customer Order Note
+						$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+					}						
+				}					
+			}catch(Exception $e)
 			{
-				$errorType 		= Netopia_Payment_Request_Abstract::CONFIRM_ERROR_TYPE_PERMANENT;
-				$errorCode		= Netopia_Payment_Request_Abstract::ERROR_CONFIRM_INVALID_POST_PARAMETERS;
-				$errorMessage 	= 'NETOPIA posted invalid parameters';
+				$errorType 		= Netopia_Payment_Request_Abstract::CONFIRM_ERROR_TYPE_TEMPORARY;
+				$errorCode		= $e->getCode();
+				$errorMessage 	= $e->getMessage();
 			}
 		}else 
 		{
@@ -697,17 +829,28 @@ class netopiapayments extends WC_Payment_Gateway {
 			$errorMessage 	= 'invalid request method for payment confirmation';
 		}
 		
+
+		// Preparing Sanitized respunse 
+		$errorType = htmlspecialchars(isset($errorType) ? sanitize_text_field($errorType) : '', ENT_QUOTES, 'UTF-8');
+		$errorCode = isset($errorCode) && is_numeric($errorCode) ? intval($errorCode) : 0;
+		$errorMessage = htmlspecialchars(isset($errorMessage) ? sanitize_textarea_field($errorMessage) : '', ENT_QUOTES, 'UTF-8');
+
+
 		header('Content-type: application/xml');
 		echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
 		if($errorCode == 0)
 		{
-			echo "<crc>{$errorMessage}</crc>";
+			echo "<crc>{".esc_html($errorMessage)."}</crc>";
 		}
 		else
 		{
-			echo "<crc error_type=\"{$errorType}\" error_code=\"{$errorCode}\">{$errorMessage}</crc>";
+			echo "<crc error_type=\"{".esc_html($errorType)."}\" error_code=\"{".esc_html($errorCode)."}\">{".esc_html($errorMessage)."}</crc>";
 			
-		}	
+		}
+		/*
+		Just Die, after display the XML
+		We don't use wp_die() here , becuse we need a clear XML, without any extera data or tag ,...
+		*/
 		die();
 	}
 
@@ -724,37 +867,17 @@ class netopiapayments extends WC_Payment_Gateway {
 		
 	}
 
-	// Check if we are forcing SSL on checkout pages
-	// Custom function not required by the Gateway
-	public function do_ssl_check() {
-		if( $this->enabled == "yes" ) {
-			if( get_option( 'woocommerce_force_ssl_checkout' ) == "no" ) {
-				echo "<div class=\"error\"><p>". sprintf( __( "<strong>%s</strong> is enabled and WooCommerce is not forcing the SSL certificate on your checkout page. Please ensure that you have a valid SSL certificate and that you are <a href=\"%s\">forcing the checkout pages to be secured.</a>" ), $this->method_title, admin_url( 'admin.php?page=wc-settings&tab=checkout' ) ) ."</p></div>";	
-			}
-		}		
-	}
 
 	/**
 	 * Get post data if set
 	 */
 	private function get_post( $name ) {
 		if ( isset( $_REQUEST[ $name ] ) ) {
-			return $_REQUEST[ $name ];
+			return sanitize_text_field(wp_unslash($_REQUEST[ $name ]));
 		} elseif ( isset( $_POST[ $name ] ) ) {
-			return $_POST[ $name ];
+			return sanitize_text_field(wp_unslash($_POST[ $name ]));
 		}
 		return null;
-	}
-
-	public function ntpLog($contents){	
-		$file = dirname(__FILE__).'/ntpDebugging_'.date('y-m-d').'.txt';	
-		
-		if (is_array($contents))
-			$contents = var_export($contents, true);	
-		else if (is_object($contents))
-			$contents = json_encode($contents);
-			
-		file_put_contents($file, date('m-d H:i:s').$contents."\n", FILE_APPEND);
 	}
 
     public function process_admin_options() {
@@ -773,7 +896,7 @@ class netopiapayments extends WC_Payment_Gateway {
 
             if ( 'file' === $this->get_field_type( $field )) {
                     try {
-                        if($_FILES['woocommerce_netopiapayments_'.$key]['size'] != 0 ) {
+                        if(isset($_FILES['woocommerce_netopiapayments_'.$key]['size']) && $_FILES['woocommerce_netopiapayments_'.$key]['size'] != 0 ) {
                             $strMessage = $cerValidation[$key]['type']. ' - ' .$cerValidation[$key]['message'];
                             $this->settings[ $key ] = $this->validate_text_field( $key, $strMessage );
                         }
@@ -787,39 +910,52 @@ class netopiapayments extends WC_Payment_Gateway {
 
     public function cerValidation() {
 	    if(!$this->_canManageWcSettings()){
-            die(); // User can not manage Woocommerce Plugin
+            wp_die(esc_html('can not manage Plugin - Permition denide.'));
         }
 
-        $allowed_extension = array("key", "cer", "pem");
+        $allowed_extension = array("key", "cer");
         foreach ($_FILES as $key => $fileInput){
 
-            $file_extension = pathinfo($fileInput["name"], PATHINFO_EXTENSION);
-            $file_mime = $fileInput["type"];
+			$sanitizedFileName = sanitize_file_name($fileInput["name"]);
+            $file_extension = pathinfo($sanitizedFileName, PATHINFO_EXTENSION);
+            $file_mime = sanitize_mime_type($fileInput["type"]);
 
             // Validate file input to check if is not empty
             if (! file_exists($fileInput["tmp_name"])) {
                 $response = array(
-                    "type" => "error",
-                    "message" => "Select file to upload."
+                    "type" => esc_html("error"),
+                    "message" => esc_html("Select file to upload.")
                 );
             }// Validate file input to check if is with valid extension
             elseif (! in_array($file_extension, $allowed_extension)) {
                 $response = array(
-                    "type" => "error",
-                    "message" => "Upload valid certificate. Only .cer / .key are allowed."
+                    "type" => esc_html("error"),
+                    "message" => esc_html("Upload valid certificate. Only .cer / .key are allowed.")
                 );
             }// Validate file MIME
             else {
-                  if ($this->sanitizeVerify($file_extension, $key)){
-                    $response = $this->uploadCer($fileInput);
-					$fileContent = $this->getCertificateContent($fileInput["name"]);	
-					$this->updateCertificateContent($key.'_content', $fileContent);
-                    } else {
-                        $response = array(
-                            "type" => "error",
-                            "message" => "The file is not sanitized / suitable for this field!!"
-                        );
-                    }
+					if ($this->isValidFileExtension($file_extension, $key)) {
+						$uploadeResult = $this->uploadCer($fileInput);
+						if(!is_null($uploadeResult["filePath"])) {
+							$fileContent = $this->getCertificateContent($uploadeResult["filePath"]);
+							$this->updateCertificateContent($key.'_content', $fileContent);
+
+							$response = array(
+								"type" => esc_html("success"),
+								"message" => esc_html("The file is uploaded and the content saved.")
+							);
+						} else {
+							$response = array(
+								"type" => esc_html("error"),
+								"message" => esc_html("The File is not uploaded. There is a problem")
+							);
+						}
+					} else {
+							$response = array(
+								"type" => esc_html("error"),
+								"message" => esc_html("Wrong File - The file is suitable for this field!!")
+							);
+					}
                  }
 
             // Uploaded certificates
@@ -841,7 +977,7 @@ class netopiapayments extends WC_Payment_Gateway {
         return $certificate;
     }
 
-    public function sanitizeVerify($file_extension, $key) {
+    public function isValidFileExtension($file_extension, $key) {
         switch ($key) {
             case "woocommerce_netopiapayments_live_cer" :
             case "woocommerce_netopiapayments_sandbox_cer" :
@@ -857,58 +993,60 @@ class netopiapayments extends WC_Payment_Gateway {
         return true;
     }
 
-    public function uploadCer($fileInput) {
-        $target = plugin_dir_path( __FILE__ ).'netopia/certificate/'.basename($fileInput["name"]);
-        if (move_uploaded_file($fileInput["tmp_name"], $target)) {
-            $response = array(
-                "type" => "success",
-                "message" => "Certificate uploaded successfully."
-            );
-			chmod($target, 0444);  // Every group have permition to just read it
-        } else {
-            $response = array(
-                "type" => "error",
-                "message" => "Problem in uploading Certificate."
-            );
-        }
-        return $response;
-    }
+
+	public function uploadCer($fileInput) {
+		if (!function_exists('wp_handle_upload')) {
+			require_once(ABSPATH . 'wp-admin/includes/file.php');
+		}
+
+		if (isset($fileInput['tmp_name']) && !empty($fileInput['tmp_name'])) {
+			$upload_overrides = array('test_form' => false);
+	
+			// Handle the upload
+			$uploaded_file = wp_handle_upload($fileInput, $upload_overrides);
+			
+			if (isset($uploaded_file['file'])) {
+				$response = array(
+					"type" => "success",
+					"message" => "Certificate uploaded successfully.",
+					"filePath" => $uploaded_file['file'],
+				);
+			} else {
+				// Error from wp_handle_upload
+				$response = array(
+					"type" => "error",
+					"message" => "Problem in uploading Certificate: " . $uploaded_file['error'],
+					"filePath" => null
+				);
+			}
+		} else {
+			$response = array(
+				"type" => "error",
+				"message" => "No file provided for upload.",
+				"filePath" => null
+			);
+		}
+	
+		return $response;
+	}	
+
+
 
     private function _canManageWcSettings() {
         return current_user_can('manage_woocommerce');
 	}
 
-	public function getCertificateContent($fName){	
-		$certificateMap = plugin_dir_path( __FILE__ ).'netopia/certificate/'.$fName;	
-		$fileContent = file_get_contents($certificateMap, FILE_USE_INCLUDE_PATH);	
+	public function getCertificateContent($uploadedKeyFilePath){
+		if (!file_exists($uploadedKeyFilePath) || !is_readable($uploadedKeyFilePath)) {
+			return 'Error: File does not exist or is not readable';
+		}
+		$certificateMap = $uploadedKeyFilePath;	
+		$fileContent = file_get_contents($certificateMap, FILE_USE_INCLUDE_PATH);
 		return $fileContent;	
 	}
 
 	public function updateCertificateContent($key,$content) {	
 		update_option( $key, $content, 'yes' );	
-	}	
-
-	public function certificateVerifyRegenerate($account_id) {	
-		$map = plugin_dir_path( __FILE__ ).'netopia/certificate/';			
-		$arr = [	
-			'sandbox_cer_content' => 'sandbox.'.$account_id.'.public.cer',	
-			'sandbox_key_content' => 'sandbox.'.$account_id.'private.key',	
-			'live_cer_content' => 'live.'.$account_id.'.public.cer',	
-			'live_key_content' => 'live.'.$account_id.'private.key'	
-		];	
-		foreach($arr as $key => $value) {	
-			$fName = $map.$value;	
-			if (file_exists($fName)) {	
-				break;	
-			} else {	
-				$keyContent = get_option('woocommerce_netopiapayments_'.$key, false);	
-				if ($keyContent) {	
-					if(file_put_contents($fName, $keyContent)) {	
-						chmod($fName, 0444);	
-					}						
-				}	
-			}	
-		}	
 	}
 
 	public function getCartSummary() {	
@@ -922,7 +1060,7 @@ class netopiapayments extends WC_Payment_Gateway {
 			$cartSummary[$i]['short_description'] =  substr($value['data']->get_short_description(), 0, 100);	
 			$i++;	
 		}	
-		return json_encode($cartSummary);	
+		return wp_json_encode($cartSummary);	
 	}	
 
 	public function getWpInfo() {	

@@ -1,24 +1,116 @@
 <?php
 
 /**
- * This additional file is the Oney widget, which displays some descriptive information regarding the payment rate options through Oney.
+ *  OneY Netopia Section
+ *  This additional file is the Oney widget, which displays some descriptive information regarding the payment rate options through Oney.
  **/
+
+ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly 
+ 
+// Handle Ajax for creating the page
+add_action('wp_ajax_create_oney_netopia_page', 'create_oney_netopia_page_ajax');
+function create_oney_netopia_page_ajax() {
+    // Verify nonce for security
+    check_ajax_referer('oney_netopia_nonce', 'security');
+
+    // Call the page creation logic
+    $addPageMessage = create_oney_netopia_page();
+
+    // Respond back with success
+    wp_send_json_success($addPageMessage);
+}
+
+function create_oney_netopia_page() {
+    global $wpdb;
+
+    // Create the table if not exists
+    $table_name = $wpdb->prefix . 'oney_netopia_vars';
+    
+    $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        oney_name TEXT,
+        oney_value TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
+
+    // Execute the query
+    require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+    dbDelta($sql);
+    
+    // Check if the page already exists
+    $page_query = new WP_Query( array(
+        'post_type' => 'page',
+        'post_status' => array( 'publish', 'pending', 'draft'), // Include all statuses, can be trash as well
+        'posts_per_page' => 1,
+        'title' => 'Oferta Rate Oney'
+    ) );
+
+    if( ! $page_query->have_posts() ) {
+        // Oney Page doesn't exist, so create it
+        $page_args = array(
+            'post_title'    => 'Oferta Rate Oney',
+            'post_content'  => '[oney-netopia-metoda-plata]',
+            'post_status'   => 'draft',
+            'post_type'     => 'page'
+        );
+
+        // Insert the post into the database and store the ID
+        $page_id = wp_insert_post( $page_args );
+        $message = 'The "Oferta Rate Oney" page has been created successfully.'; // Success message
+        
+    } else {
+        // Page already exists, so retrieve its ID
+        $page = $page_query->posts[0];
+        $page_id = $page->ID;
+        $message = 'The "Oferta Rate Oney" page already exists.'; // already exists
+    }
+
+    // Use the options API to store and retrieve the 'oney_netopia_details_page_id'
+    $option_name = 'oney_netopia_details_page_id';
+    $existing_entry = get_option( $option_name ); // Retrieve from cache if available
+
+    if ( false !== $existing_entry ) {
+        // Entry already exists, so update its value
+        update_option( $option_name, $page_id ); // Update option value
+    } else {
+        // Entry doesn't exist, so insert a new entry
+        add_option( $option_name, $page_id ); // Insert new option
+    }
+
+    // Return the message
+    return $message;
+}
 
 function get_oney_netopia_details_page_id() {
     global $wpdb;
 
-    // Query the database to get the oney_value of 'oney_netopia_details_page_id'
-    $table_name = $wpdb->prefix . 'oney_netopia_vars';
-    $result = $wpdb->get_row( $wpdb->prepare( "SELECT oney_value FROM $table_name WHERE oney_name = %s", 'oney_netopia_details_page_id' ) );
-    
-    if ($result) {
-        // The value was retrieved successfully, return it
-        return $result->oney_value;
-    } else {
-        // The value was not found in the database, return null or handle as needed
-        return null;
+    $cache_key = 'oney_netopia_details_page_id';
+    $cached_value = wp_cache_get( $cache_key, 'custom_cache_group' );
+
+    if ( false === $cached_value ) {
+        // Cache miss - fetch data from the database
+        $table_name = esc_sql($wpdb->prefix . 'oney_netopia_vars');
+        $result = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT oney_value FROM {$table_name} WHERE oney_name = %s",
+                'oney_netopia_details_page_id'
+            )
+        );
+
+        if ( $result ) {
+            $cached_value = $result->oney_value;
+
+            // Store the value in cache
+            wp_cache_set( $cache_key, $cached_value, 'custom_cache_group', 3600 ); // Cache for 1 hour
+        } else {
+            // No result found in the database
+            $cached_value = null;
+        }
     }
+
+    return $cached_value;
 }
+
  
 // ENQUE CSS
  function enqueue_oney_netopia_addon_css() {
@@ -64,7 +156,7 @@ function oneynetopia_34_single_product_page_simulator($product_price, $cart_tota
             <img id='oney-netopia-image' src='".NTP_PLUGIN_DIR."img/oney-3-4-rate-logo.png' title='Oney 3-4 Rate cu cardul de debit' style=''>
     
     
-            <p class='text-oney-netopia-single-product'>Plătește online în <strong>3 sau 4 rate</strong> în doar câțiva pași! <a href='".$oney_details_page_url."' class='oney-netopia-details' target='_blank'>Vezi detalii</a></p>
+            <p class='text-oney-netopia-single-product'>Plătește online în <strong>3 sau 4 rate</strong> în doar câțiva pași!</p>
             
              <div class='oney-netopia-rates-wrapper'>
                 <div class='oney-netopia-rate'>
@@ -190,8 +282,6 @@ function oneynetopia_single_product_page()
     }
     
     // cart total
-    //$cart_total = wc_format_decimal(WC()->cart->get_cart_total());
-    
     $cart_total_raw = WC()->cart->get_cart_total(); // Get the raw cart total as a string
 
     // Get the number of decimals set in WooCommerce
@@ -207,7 +297,7 @@ function oneynetopia_single_product_page()
     $cart_total = wc_format_decimal($cart_total_raw);
     
     if($product_price >= 450 && $product_price <= 12000 && $cart_total <= 12000){
-        $html = oneynetopia_34_single_product_page_simulator($product_price, $cart_total, 'block');
+        $html = oneynetopia_34_single_product_page_simulator($product_price, $cart_total, 'block'); 
         $html .= oney_450_section('none');
     } else if ($product_price < 450 && $cart_total <= 12000){
         $html = oneynetopia_34_single_product_page_simulator($product_price, $cart_total, 'none');
@@ -221,7 +311,39 @@ function oneynetopia_single_product_page()
     }
     
     $html .=oneynetopia_single_product_variation_current_price();
-    echo $html;
+    // echo wp_kses_post($html); // Sanitizes content for allowed HTML tags
+    if(!empty($html)) {
+        $allowed_tags =  array(
+                            'script' => array(),
+                            'div' => array(
+                                'class' => array(),
+                                'style' => array(),
+                            ),
+                            'p' => array(
+                                'class' => array(),
+                            ),
+                            'span' => array(
+                                'class' => array(),
+                                'id' => array(),
+                            ),
+                            'strong' => array(),
+                            'img' => array(
+                                'src' => array(),
+                                'id' => array(),
+                                'title' => array(),
+                                'style' => array(),
+                            ),
+                            'input' => array(
+                                'type' => array(),
+                                'name' => array(),
+                                'value' => array(),
+                                'id' => array(),
+                                'class' => array(),
+                            ),
+                        );
+        echo wp_kses($html, $allowed_tags);
+    }
+    // echo $html; // Sanitizes content for allowed HTML tags
 }
 
 add_action('woocommerce_after_add_to_cart_form', 'oneynetopia_single_product_page');
@@ -247,8 +369,7 @@ function get_cart_total_callback() {
     // Format the cart total to a decimal
     $cart_total = wc_format_decimal($cart_total_raw);
     
-    echo $cart_total;
-    //wp_die();
+    echo esc_html($cart_total);
 }
 
 
@@ -302,8 +423,7 @@ function oney_450_section($display = 'none') {
     
     
     
-    // Output the shipping progress bar HTML
-    // ob_start(); 
+    // Output the shipping progress bar HTML 
     $html = "<script>
     // Function to update cart total dynamically
     function updateCartTotalProgress() {
@@ -362,11 +482,11 @@ function oney_450_section($display = 'none') {
         <div class="oney-netopia-progress-bar oney-netopia-free-progress-bar">';
         
     if ($remaining_amount <= 0) {
-        $html .= '<div class="oney-netopia-progress-msg"><span id="acord-remaining-amount">Comanda ta poate fi plătită</span><span class="oney-netopia-remaining-amount"></span><span id="post-acord-remaining-amount"></span> în 3 sau 4 rate prin <img src="'.NTP_PLUGIN_DIR.'img/oney3x4x-logo.png" style="display: inline; width: 95px; margin-bottom: -4px;"> ! <a href="'.$oney_details_page_url.'" class="oney-netopia-details">Vezi detalii</a></div>';
+        $html .= '<div class="oney-netopia-progress-msg"><span id="acord-remaining-amount">Comanda ta poate fi plătită</span><span class="oney-netopia-remaining-amount"></span><span id="post-acord-remaining-amount"></span> în 3 sau 4 rate prin <img src="'.NTP_PLUGIN_DIR.'img/oney3x4x-logo.png" style="display: inline; width: 95px; margin-bottom: -4px;"> !</div>';
     } else if($remaining_amount < 450 ) {
-        $html .= '<div class="oney-netopia-progress-msg"><div class="cumpara-text"> <span id="acord-remaining-amount">Coșului tău îi lipsesc încă</span> <span class="oney-netopia-remaining-amount">' . number_format($remaining_amount, 2) . ' RON</span> <span id="post-acord-remaining-amount">pentru a putea plăti</span> în 3 sau 4 rate prin <img src="'.NTP_PLUGIN_DIR.'img/oney3x4x-logo.png" style="display: inline; width: 95px; margin-bottom: -4px;"> ! <a href="'.$oney_details_page_url.'" class="oney-netopia-details">Vezi detalii</a></div></div>';
+        $html .= '<div class="oney-netopia-progress-msg"><div class="cumpara-text"> <span id="acord-remaining-amount">Coșului tău îi lipsesc încă</span> <span class="oney-netopia-remaining-amount">' . number_format($remaining_amount, 2) . ' RON</span> <span id="post-acord-remaining-amount">pentru a putea plăti</span> în 3 sau 4 rate prin <img src="'.NTP_PLUGIN_DIR.'img/oney3x4x-logo.png" style="display: inline; width: 95px; margin-bottom: -4px;"> !</div></div>';
     } else if($remaining_amount == $min_purchase_amount) {
-        $html .= '<div class="oney-netopia-progress-msg"><div class="cumpara-text"> <span id="acord-remaining-amount">Adaugă în coș produse de minim</span> <span class="oney-netopia-remaining-amount">' . number_format($remaining_amount, 2) . ' RON</span> <span id="post-acord-remaining-amount">și poți plăti</span> în 3 sau 4 rate prin <img src="'.NTP_PLUGIN_DIR.'img/oney3x4x-logo.png" style="display: inline; width: 95px; margin-bottom: -4px;"> ! <a href="'.$oney_details_page_url.'" class="oney-netopia-details">Vezi detalii</a></div></div>';
+        $html .= '<div class="oney-netopia-progress-msg"><div class="cumpara-text"> <span id="acord-remaining-amount">Adaugă în coș produse de minim</span> <span class="oney-netopia-remaining-amount">' . number_format($remaining_amount, 2) . ' RON</span> <span id="post-acord-remaining-amount">și poți plăti</span> în 3 sau 4 rate prin <img src="'.NTP_PLUGIN_DIR.'img/oney3x4x-logo.png" style="display: inline; width: 95px; margin-bottom: -4px;"> !</div></div>';
     }
     
     $html .= '<div class="oney-netopia-progress-area">
@@ -379,8 +499,6 @@ function oney_450_section($display = 'none') {
 }
 
 function oneynetopia_cart_450_reminder(){
-    
-    //$cart_total = wc_format_decimal(WC()->cart->get_cart_total());
     
     $cart_total_raw = WC()->cart->get_cart_total(); // Get the raw cart total as a string
 
@@ -403,14 +521,10 @@ function oneynetopia_cart_450_reminder(){
         $html = oney_450_section('none');
     }
     
-    echo $html;
+    echo wp_kses_post($html); // Sanitizes content for allowed HTML tags
 }
 add_action('woocommerce_before_cart_table', 'oneynetopia_cart_450_reminder');
-
 add_action('woocommerce_checkout_before_customer_details', 'oneynetopia_cart_450_reminder');
-
-
-
 
 /* BEGIN SHORTCODE */
 
@@ -418,8 +532,8 @@ add_action('woocommerce_checkout_before_customer_details', 'oneynetopia_cart_450
 function oney_netopia_metoda_plata_shortcode() {
     // Retrieve the setting value
         $home_url = home_url(); // Get the home URL
-        $parsed_url = parse_url($home_url); // Parse the URL to get its components
-        $domain = $parsed_url['host']; 
+        $parsed_url = wp_parse_url($home_url); // Parse the URL to get its components
+        $domain = isset($parsed_url['host']) ? $parsed_url['host'] : ''; 
         
         $html = '<div id="oney-netopia-info-section"><h3>Cum poți plăti în 3-4 rate prin Oney?</h3>
         <div class="landing-page-oney-netopia-images-container">
@@ -494,12 +608,7 @@ add_shortcode('oney-netopia-metoda-plata', 'oney_netopia_metoda_plata_shortcode'
 /* END SHORTCODE */
 
 
-
-
-
-
 /* BEGIN CHECKOUT */
-
 // Hook into the WooCommerce payment method title filter
 if ( !is_admin() ) {
     add_filter('woocommerce_gateway_title', 'customize_payment_method_title', 10, 2);
@@ -615,7 +724,7 @@ function customize_payment_method_description($gateways) {
                     
                             <img id="oney-netopia-image" src="'.NTP_PLUGIN_DIR.'img/oney-3-4-rate-logo.png" title="" style="">
                     
-                            <p class="text-oney-netopia-single-product">Plătește online în <strong>3 sau 4 rate</strong> în doar câțiva pași! <a href="'.$oney_details_page_url.'" class="oney-netopia-details" target="_blank">Vezi detalii</a></p>
+                            <p class="text-oney-netopia-single-product">Plătește online în <strong>3 sau 4 rate</strong> în doar câțiva pași!</p>
                             <div class="oney-netopia-rates-wrapper">
                                 <div class="oney-netopia-rate">
                                     <span>3 Rate: </span>
