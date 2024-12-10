@@ -223,7 +223,7 @@ class netopiapayments extends WC_Payment_Gateway {
 					if($method != 'oney') {
 						?>
 							<li>
-								<input type="radio" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-<?php echo esc_attr($method); ?>" value="<?php esc_attr(method); ?>" <?php echo esc_attr($checked); ?> /><label for="inspire-use-stored-payment-info-yes" style="display: inline;"><?php echo esc_html($name_methods[$method]); ?></label>
+								<input type="radio" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-<?php echo esc_attr($method); ?>" value="<?php echo esc_attr($method); ?>" <?php echo esc_attr($checked); ?> /><label for="inspire-use-stored-payment-info-yes" style="display: inline;"><?php echo esc_html($name_methods[$method]); ?></label>
 							</li>
 						<?php
 					} elseif($method == 'oney' && !in_array('credit_card', $payment_methods)) {

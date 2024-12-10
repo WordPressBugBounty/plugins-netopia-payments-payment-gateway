@@ -90,25 +90,36 @@ function get_oney_netopia_details_page_id() {
     if ( false === $cached_value ) {
         // Cache miss - fetch data from the database
         $table_name = esc_sql($wpdb->prefix . 'oney_netopia_vars');
-        $result = $wpdb->get_row(
+
+        $table_exists = $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT oney_value FROM {$table_name} WHERE oney_name = %s",
-                'oney_netopia_details_page_id'
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s",
+                DB_NAME, 
+                $table_name
             )
         );
+        
+        if($table_exists) {
+            $result = $wpdb->get_row(
+                $wpdb->prepare(
+                    "SELECT oney_value FROM {$table_name} WHERE oney_name = %s",
+                    'oney_netopia_details_page_id'
+                )
+            );
+    
+            if ( $result ) {
+                $cached_value = $result->oney_value;
+    
+                // Store the value in cache
+                wp_cache_set( $cache_key, $cached_value, 'custom_cache_group', 3600 ); // Cache for 1 hour
+            } else {
+                // No result found in the database
+                $cached_value = null;
+            }
 
-        if ( $result ) {
-            $cached_value = $result->oney_value;
-
-            // Store the value in cache
-            wp_cache_set( $cache_key, $cached_value, 'custom_cache_group', 3600 ); // Cache for 1 hour
-        } else {
-            // No result found in the database
-            $cached_value = null;
+        return $cached_value;
         }
     }
-
-    return $cached_value;
 }
 
  
@@ -495,7 +506,7 @@ function oney_450_section($display = 'none') {
         </div>
     </div>';
 
-    return $html;
+    // return $html;
 }
 
 function oneynetopia_cart_450_reminder(){
@@ -659,9 +670,8 @@ add_filter('woocommerce_available_payment_gateways', 'customize_payment_method_d
 
 // Function to customize the payment method description in checkout classic
 function customize_payment_method_description($gateways) {
-    
     if ( is_admin() ) {
-        return "";
+        return array();
     }
 
     // Check if the action has been performed before
@@ -749,6 +759,7 @@ function customize_payment_method_description($gateways) {
 				</div>';
 
                 $gateways['netopiapayments']->description .= $html;
+
             }
              
             do_action('woocommerce_available_payment_gateways_customized');
@@ -757,5 +768,6 @@ function customize_payment_method_description($gateways) {
 
     return $gateways;
 }
+
 
 /* END CHECKOUT */

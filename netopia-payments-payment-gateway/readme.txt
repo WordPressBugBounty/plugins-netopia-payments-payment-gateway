@@ -3,7 +3,7 @@ Contributors: NETOPIA
 Tags: netopia, mobilpay, netopia payments, netopia payment gateway, netopia for woocommerce
 Requires at least: 4.0.1
 Tested up to: 6.7
-Stable tag: 1.4
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -63,3 +63,7 @@ Please note that **on first update** your `private.key` and `public.cer` could b
 = 1.3.1 = 
 * compatible with WooCommerce blocks
 * fix auto inactive
+= 1.4 = 
+* add agreement to add Oney page
+= 1.4.1 = 
+* Check if the table exists before making the query
