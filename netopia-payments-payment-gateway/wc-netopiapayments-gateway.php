@@ -836,11 +836,11 @@ class netopiapayments extends WC_Payment_Gateway {
 		echo "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
 		if($errorCode == 0)
 		{
-			echo "<crc>{".esc_html($errorMessage)."}</crc>";
+			echo "<crc>".esc_html($errorMessage)."</crc>";
 		}
 		else
 		{
-			echo "<crc error_type=\"{".esc_html($errorType)."}\" error_code=\"{".esc_html($errorCode)."}\">{".esc_html($errorMessage)."}</crc>";
+			echo "<crc error_type=\"".esc_html($errorType)."\" error_code=\"".esc_html($errorCode)."\">".esc_html($errorMessage)."</crc>";
 			
 		}
 		/*
@@ -1070,7 +1070,7 @@ class netopiapayments extends WC_Payment_Gateway {
 	}
 
 	public function getNtpPluginInfo() {
-		$ntpPlugin_ver ="Version 1.4.2";
+		$ntpPlugin_ver ="Version 1.4.3";
 		return $ntpPlugin_ver;
 	}
 }
