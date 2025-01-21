@@ -40,7 +40,7 @@ class netopiapayments extends WC_Payment_Gateway {
 		// Supports the default credit card form
 		$this->supports = array(
 	               'products',
-	               'refunds'
+	            //    'refunds'
 	               );
 		
 		$this->init_form_fields();
@@ -124,7 +124,7 @@ class netopiapayments extends WC_Payment_Gateway {
 				'css'		=> 'max-width:350px;',
 			),
 			'key_setting' => array(
-                'title'       => __( 'Login to NETOPIA Platform and go to <i>"Puncte de vânzare"</i> -> <i>"Opțiuni"</i> (iconița cu 3 puncte) -> <i>"Setări tehnice"</i>', 'netopia-payments-payment-gateway' ),
+                'title'       => __( 'Login to NETOPIA Platform and go to <i>"Puncte de vânzare"</i> -> <i>"Optiuni"</i> (iconita cu 3 puncte) -> <i>"Setari tehnice"</i>', 'netopia-payments-payment-gateway' ),
                 'type'        => 'title',
                 'description' => '',
             ),
@@ -165,19 +165,11 @@ class netopiapayments extends WC_Payment_Gateway {
 		        'default'     => array('credit_card'),
 		        'options'     => array(
 		          'credit_card'	      => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
-				  'oney'  => __( 'Debit Card with Oney', 'netopia-payments-payment-gateway' ),
 				  'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
 		        //   'sms'			        => __('SMS' , 'netopia-payments-payment-gateway' ),
 		        //   'bank_transfer'		      => __( 'Bank Transfer', 'netopia-payments-payment-gateway' ),
 		          ),
 		    ),
-			'agreement' => array(
-				'title'		=> __( 'Agreement', 'netopia-payments-payment-gateway' ),
-				'label'		=> __( 'By checking, you agree to the creation of an additional page called "Oferta Rate Oney" in accordance with WordPress policy.', 'netopia-payments-payment-gateway' ),
-				'type'		=> 'checkbox',
-				'description' => __( 'This is optional, and you can activate the Oney option without having a separate page. Do you want to create "Oferta Rate Oney" page ? <button type="button"  id="agreeToCreateOneyPage" >Yes, Create it </button>', 'netopia-payments-payment-gateway' ),
-				'default'	=> 'no',
-			),
 			// 'sms_setting' => array(
 			// 	'title'       => __( 'For SMS Payment', 'netopia-payments-payment-gateway' ),
 			// 	'type'        => 'title',
@@ -200,43 +192,53 @@ class netopiapayments extends WC_Payment_Gateway {
 		// Description of payment method from settings
       	if ( $this->description ) { ?>
         	<p><?php echo esc_html($this->description); ?></p>
-  		<?php }
+  		<?php }else {
+			?><p><?php echo esc_html("Plata online prin NETOPIA Payments"); ?></p><?php
+		}
+
   		if ( $this->payment_methods ) {  
   			$payment_methods = $this->payment_methods;	
   		}else{
-  			$payment_methods = array('credit_card');
+  			// $payment_methods = array('credit_card');
   		}
+		$checked ='';
   		$name_methods = array(
 		          'credit_card'	      => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
-		          'oney'	      => __( 'Oney', 'netopia-payments-payment-gateway' ),
 		          'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
 				//   'sms'			        => __('SMS' , 'netopia-payments-payment-gateway' ),
 		        //   'bank_transfer'		      => __( 'Bank Transfer', 'netopia-payments-payment-gateway' ),
 		          );
   		?>
-  		<div id="netopia-methods">
-	  		<ul>
+  		
 	  		<?php
-			foreach ($payment_methods as $method) {
-	  			$checked ='';
-	  			$checked = $method == 'credit_card' ? 'checked="checked"' : '';
-					if($method != 'oney') {
-						?>
-							<li>
-								<input type="radio" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-<?php echo esc_attr($method); ?>" value="<?php echo esc_attr($method); ?>" <?php echo esc_attr($checked); ?> /><label for="inspire-use-stored-payment-info-yes" style="display: inline;"><?php echo esc_html($name_methods[$method]); ?></label>
-							</li>
-						<?php
-					} elseif($method == 'oney' && !in_array('credit_card', $payment_methods)) {
-						?>
-							<li>
-								<input type="radio" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-credit_card" value="credit_card" checked="checked" /><label for="inspire-use-stored-payment-info-yes" style="display: inline;">Credit Card</label>
-							</li>
-						<?php
-					}
-				}
-			?>
-	  		</ul>
-  		</div>
+			switch (true) {
+				case empty($payment_methods):
+					?><div id="netopia-methods">Nu este setata nicio metoda de plata!</div><?php
+					break;
+				case count($payment_methods) == 1:
+					?><input type="hidden" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-<?php echo esc_attr($payment_methods[0]); ?>" value="<?php echo esc_attr($payment_methods[0]); ?>"/><?php
+					break;
+				case count($payment_methods) > 1:
+					?><div id="netopia-methods">
+						<ul><?php
+							foreach ($payment_methods as $method) {
+								// Verify if the payment method is available in the list.
+								if(array_key_exists($method, $name_methods)) {
+									$checked = $method == 'credit_card' ? 'checked="checked"' : '';
+									?>
+										<li>
+											<input type="radio" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-<?php echo esc_attr($method); ?>" value="<?php echo esc_attr($method); ?>" <?php echo esc_attr($checked); ?> /><label for="inspire-use-stored-payment-info-yes" style="display: inline;"><?php echo esc_html($name_methods[$method]); ?></label>
+										</li>
+									<?php
+									}
+								}
+						?></ul>
+					</div><?php
+					break;
+			}
+		?>
+	  		
+  		
 
   		<style type="text/css">
   			#netopia-methods{display: inline-block;}
@@ -441,7 +443,6 @@ class netopiapayments extends WC_Payment_Gateway {
 		
 		$name_methods = array(
 		          'credit_card' => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
-		          'oney' => __( 'Oney', 'netopia-payments-payment-gateway' ),
 		          'bitcoin' => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
 				//   'sms' => __('SMS' , 'netopia-payments-payment-gateway' ),
 		        //   'bank_transfer' => __( 'Bank Transfer', 'netopia-payments-payment-gateway' ),
@@ -654,14 +655,14 @@ class netopiapayments extends WC_Payment_Gateway {
 										$order->update_status('on-hold', '');
 
 										//Error Note
-										$message = 'Thank you for shopping with us.<br />Your payment transaction was successful, but the amount paid is not the same as the total order amount.<br />Your order is currently on-hold.<br />Kindly contact us for more information regarding your order and payment status.';
+										$message = 'Tranzactia de plata a fost efectuata cu succes, dar suma platita nu este aceeasi cu suma totala a comenzii. <br> Comanda dvs. este in prezent in asteptare. <br> Va rugam sa ne contactati pentru mai multe informatii.';
 										$message_type = 'notice';
 
 										//Add Customer Order Note
-										$order->add_order_note($message.'<br />Netopia Transaction ID: '.$transaction_id, 1);
+										$order->add_order_note($message.'<br />ID Tranzactie NETOPIA: '.$transaction_id, 1);
 
 										//Add Admin Order Note
-										$order->add_order_note('Look into this order. <br />This order is currently on hold.<br />Reason: Amount paid is less than the total order amount.<br />Amount Paid was &#8358; '.$amount_paid.' RON while the total order amount is &#8358; '.$amountorder_RON.' RON<br />Netopia Transaction ID: '.$transaction_id);
+										$order->add_order_note('Tranzactia este momentan in asteptare. <br />Motiv: Suma platita este mai mica fata de totalul comenzii.<br />Suma platita a fost de '.$amount_paid.' RON, in timp ce suma totala a comenzii este '.$amountorder_RON.' RON<br />ID Tranzactie NETOPIA: '.$transaction_id);
 
 										// Reduce stock levels
 										wc_reduce_stock_levels($order->get_id());
@@ -675,46 +676,39 @@ class netopiapayments extends WC_Payment_Gateway {
 									$order->add_order_note('Plata prin NETOPIA payments<br />Transaction ID: '.$transaction_id);
 
 									//Add customer order note
-									$order->add_order_note('Plata receptionata.<br />Comanda este in curs de procesare.<br />Vom face livrarea in curand.<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+									$order->add_order_note('Plata receptionata.<br />Comanda este in curs de procesare.<br />Vom face livrarea in curand.<br />ID Tranzactie NETOPIA: '.$transaction_id, 1);
 
 									// Reduce stock levels
 									wc_reduce_stock_levels($order->get_id());
 
 									// Empty cart
 									wc_empty_cart();
-
-									//$message = 'Thank you for shopping with us.<br />Your transaction was successful, payment was received.<br />Your order is currently being processed.';
-									//$message_type = 'success';
 								}
 								else {
 									if( $order->has_downloadable_item() ) {
 
 										//Update order status
-										$order->update_status( 'completed', 'Payment received, your order is now complete.' );
+										$order->update_status( 'completed', 'Plata primita, Comanda dvs. este acum completa.' );
 
 										//Add admin order note
 										$order->add_order_note('Plata prin NETOPIA payments<br />Transaction ID: '.$transaction_id);
 
 										//Add customer order note
-										$order->add_order_note('Payment Received.<br />Your order is now complete.<br />NETOPIA Transaction ID: '.$transaction_id, 1);
-
-										//$message = 'Thank you for shopping with us.<br />Your transaction was successful, payment was received.<br />Your order is now complete.';
-										//$message_type = 'success';
-
+										$order->add_order_note('Plata primita.<br />Comanda dvs. este acum completa.<br />ID Tranzactie NETOPIA: '.$transaction_id, 1);
 									}
 									else {
 
 										//Update order status
-										$msgDefaultStatus = ($this->default_status == 'processing') ? 'Payment received, your order is currently being processed.' : 'Payment received, your order is now complete.';
+										$msgDefaultStatus = ($this->default_status == 'processing') ? 'Plata primita, Comanda dvs. este in prezent in curs de procesare.' : 'Plata primita, Comanda dvs. este acum completa.';
 										$order->update_status( $this->default_status, $msgDefaultStatus );
 
 										//Add admin order noote
 										$order->add_order_note('Plata prin NETOPIA payments<br />Transaction ID: '.$transaction_id);
 
 										//Add customer order note
-										$order->add_order_note($msgDefaultStatus.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+										$order->add_order_note($msgDefaultStatus.'<br />ID Tranzactie NETOPIA: '.$transaction_id, 1);
 
-										$message = 'Thank you for shopping with us.<br />Your transaction was successful, payment was received.<br />Your order is currently being processed.';
+										$message = 'Tranzactia a fost efectuata cu succes, plata a fost primita.<br />Comanda dvs este in prezent in procesare.';
 										$message_type = 'success';
 									}
 
@@ -731,25 +725,25 @@ class netopiapayments extends WC_Payment_Gateway {
 						case 'paid':
 							if($this->isAllowedToChangeStatus($order)){
 								//Update order status -> to be added, but on-hold should work for now
-								$order->update_status( 'on-hold', 'Your payment is currently being processed.' );
+								$order->update_status( 'on-hold', 'Comanda este in prezent in curs de procesare.' );
 								//Add admin order note
-								$order->add_order_note('Payment remotely accepted via NETOPIA, make sure to capture it<br />Transaction ID: '.$transaction_id);
+								$order->add_order_note('Plata acceptata prin NETOPIA, asigurati-va sa o capturati<br />ID Tranzactie: '.$transaction_id);
 							}
 							break;	
 						case 'confirmed_pending':
 							if($this->isAllowedToChangeStatus($order)){
 								//Update order status
-								$order->update_status( 'on-hold', 'Your payment is currently being processed.' );
+								$order->update_status( 'on-hold', 'Comanda este in prezent in curs de procesare.' );
 								//Add admin order note
-								$order->add_order_note('Payment pending via NETOPIA<br />Transaction ID: '.$transaction_id);
+								$order->add_order_note('Plata in asteptare prin NETOPIA.<br />ID Tranzactie: '.$transaction_id);
 							}
 							break;
 						case 'paid_pending':
 							if($this->isAllowedToChangeStatus($order)){
 								//Update order status
-								$order->update_status( 'on-hold', 'Your payment is currently being processed.' );
+								$order->update_status( 'on-hold', 'Comanda este in prezent in curs de procesare.' );
 								//Add admin order note
-								$order->add_order_note('Payment pending via NETOPIA<br />Transaction ID: '.$transaction_id);
+								$order->add_order_note('Plata in asteptare prin NETOPIA.<br />ID Tranzactie: '.$transaction_id);
 							}
 							break;
 						case 'canceled':
@@ -758,12 +752,12 @@ class netopiapayments extends WC_Payment_Gateway {
 								//update DB, SET status = "canceled"
 								$errorMessage = $objPmReq->objPmNotify->errorMessage;							
 
-								$message = 	'Thank you for shopping with us. <br />However, the transaction wasn\'t successful, payment wasn\'t received.';
+								$message = 	'Va multumim pentru cumparaturi. <br />Insa, tranzactia nu a fost efectuata cu succes, plata nu a fost primita.';
 								//Add Customer Order Note
-								$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+								$order->add_order_note($message.'<br />ID Tranzactie NETOPIA: '.$transaction_id, 1);
 
 								//Add Admin Order Note
-								$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id);
+								$order->add_order_note($message.'<br />ID Tranzactie NETOPIA: '.$transaction_id);
 
 								//Update the order status
 								$order->update_status('cancelled', '');
@@ -793,10 +787,10 @@ class netopiapayments extends WC_Payment_Gateway {
 							$errorMessage = $objPmReq->objPmNotify->errorMessage;
 							$message = 	'Plata rambursata.';
 							//Add Customer Order Note
-							$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+							$order->add_order_note($message.'<br />ID Tranzactie NETOPIA: '.$transaction_id, 1);
 
 							//Add Admin Order Note
-							$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id);
+							$order->add_order_note($message.'<br />ID Tranzactie NETOPIA: '.$transaction_id);
 
 							//Update the order status if fully refunded
 							if ($refund_amount == $objPmReq->objPmNotify->originalAmount) {
@@ -806,14 +800,16 @@ class netopiapayments extends WC_Payment_Gateway {
 					}
 				}else{
 					if($this->isAllowedToChangeStatus($order)){
-						$order->update_status('failed', '');
-
 						//Error Note
 						$message = $objPmReq->objPmNotify->errorMessage;
 						if(empty($message) && isset($msg_errors[$objPmReq->objPmNotify->errorCode])) $message = $msg_errors[$objPmReq->objPmNotify->errorCode];
 						$message_type = 'error';
+
+						// Status changed to Failed
+						$order->update_status('failed', $message);
+						
 						//Add Customer Order Note
-						$order->add_order_note($message.'<br />NETOPIA Transaction ID: '.$transaction_id, 1);
+						$order->add_order_note($message.'<br />ID Tranzactie NETOPIA: '.$transaction_id, 1);
 					}						
 				}					
 			}catch(Exception $e)
@@ -1074,7 +1070,7 @@ class netopiapayments extends WC_Payment_Gateway {
 	}
 
 	public function getNtpPluginInfo() {
-		$ntpPlugin_ver ="Version 1.4";
+		$ntpPlugin_ver ="Version 1.4.2";
 		return $ntpPlugin_ver;
 	}
 }
