@@ -9,9 +9,6 @@ let selectedPaymentMethod = 'credit_card'; // Default value
 
 document.addEventListener('change', function(event) {
   if (event.target.name === 'netopia_method_pay') {
-     // Just Test
-    console.log(event.target.value);
-    console.log(ntpSettings);
    
     selectedPaymentMethod = event.target.value;
     // document.getElementById("netopia_selected_method").value = selectedPaymentMethod;

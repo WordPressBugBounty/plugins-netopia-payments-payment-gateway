@@ -7,6 +7,8 @@
  * @author      Claudiu Tudose <claudiu.tudose@netopia-system.com>
  *
  * the mobilpay payment request class used for a bank transfer payment
+ * Note : this class is not use any more, Will be delete.
+ * - Temporary keep it
  */
 class Netopia_Payment_Request_Bitcoin extends Netopia_Payment_Request_Abstract
 {

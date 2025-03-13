@@ -65,7 +65,7 @@ final class netopiapaymentsBlocks extends AbstractPaymentMethodType {
 			'title'       		=> $this->get_setting( 'title' ),
 			'description' 		=> $this->get_setting( 'description' ),
 			'supports'    		=> $this->get_supported_features(),
-			'payment_methods'   => $paymentMethodArr,
+			'payment_methods'   => is_array($paymentMethodArr) ? $paymentMethodArr : array(),
 			'custom_html'     => $this->tmpHtml($paymentMethodArr),
 		];
 	}
@@ -75,38 +75,47 @@ final class netopiapaymentsBlocks extends AbstractPaymentMethodType {
 			return "";
 		}
 		global $wpdb;
-
-		// Check which payment method is selected in WooCommerce Blocks
-		$NtpPaymentMethod = $this->get_setting( 'payment_methods' );
-
-		// if the plugin is not Enable/Active yet, return null
-		if(!is_array($NtpPaymentMethod)) {
-			return;
+		
+		/*
+		* if the plugin is not return array, the payment methos must be array
+		* Check the configuration
+		*/
+		if(empty($paymentMethodArr)) {
+			wc_add_notice( __( 'NETOPIA Payment method is not configured correctly!', 'netopia-payments-payment-gateway' ), $notice_type = 'error' );
+			return false;
 		}
-	
-		// if the plugin is not configure yet, return null
-		if(count($NtpPaymentMethod)=== 0) {
-			return;
-		}
-				
+
+		
 		// Output the avalible payment methods
 		$html = '';
 		$checked = "";
 		$name_methods = array(
 			'credit_card'	      => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
-			'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
+			// 'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
 			);
 		
-		foreach ($paymentMethodArr as $method) {
-			// Verify if the payment method is available in the list.
-			if(array_key_exists($method, $name_methods)) {
-				$checked = ($method == 'credit_card') ? 'checked="checked"' : "" ;
-				$html .=  '<li>
-								<input type="radio" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-'.$method.'" value="'.$method.'" '.$checked.' />
-								<label for="netopia-method-' . $method . '" style="display: inline;">' . $name_methods[$method] . '</label>
-							</li>';
-			}
-		}
+
+			switch (true) {
+				case empty($paymentMethodArr):
+					$html .=  '<div id="netopia-methods">Nu este setata nicio metoda de plata!</div>';
+				break;
+				case count($paymentMethodArr) === 1:
+					// Default is Credit/Debit Card (the ZERO index)
+					$html .=  '<input type="hidden" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-'.esc_attr($paymentMethodArr[0]).'" value="'.esc_attr($paymentMethodArr[0]).'"/>';
+				break;
+				case count($paymentMethodArr) > 1:
+					foreach ($paymentMethodArr as $method) {
+						// Verify if the payment method is available in the list.
+						if(array_key_exists($method, $name_methods)) {
+							$checked = ($method == 'credit_card') ? 'checked="checked"' : "" ;
+							$html .=  '<li>
+											<input type="radio" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-'.$method.'" value="'.$method.'" '.$checked.' />
+											<label for="netopia-method-' . $method . '" style="display: inline;">' . $name_methods[$method] . '</label>
+										</li>';
+						}
+					}
+				break;
+				}
 		return $html;
 	}
 }

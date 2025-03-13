@@ -3,7 +3,7 @@ Contributors: NETOPIA
 Tags: netopia, mobilpay, netopia payments, netopia payment gateway, netopia for woocommerce
 Requires at least: 4.0.1
 Tested up to: 6.7
-Stable tag: 1.4.3
+Stable tag: 1.4.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,7 +17,7 @@ NETOPIA Payments Payment Gateway extends WooCommerce payment options by adding N
 
 * **100% FREE TO USE** (GPLv2 license).
 * Integrates NETOPIA payments' card and cryptocoin payments service with your WordPress + WooCommerce online shop. SMS and Wire transfer options are still under development.
-* Accepts payments with Visa and Mastercard credit/debit cards, Bitcoin and Ethereum
+* Accepts payments with Visa and Mastercard credit/debit cards
 * Handles IPN responses and automatically changes order status on your shop in real time (confirmed/paid or failure messages and refunds).
 
 = Requirements: =
@@ -72,3 +72,9 @@ Please note that **on first update** your `private.key` and `public.cer` could b
 * manage radiobox options on single method
 = 1.4.3 = 
 * remove { and } from IPN responses
+= 1.4.4 = 
+* remove BTC option
+* fix Conflict with Revolut
+* Remove the radio box if there is more than one payment option
+* Fix the unnecessary initialization for IPN
+

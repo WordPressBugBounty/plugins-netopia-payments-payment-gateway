@@ -52,8 +52,11 @@ class netopiapayments extends WC_Payment_Gateway {
 			$this->$setting_key = $value;
 		}
 		
-		add_action('init', array(&$this, 'check_netopiapayments_response'));
-		//update for woocommerce >2.0
+		/**
+		 * Define Action for IPN. base on WooCommerce api
+		 */
+		// Can be use if there is no permtion to use API
+		// add_action('init', array(&$this, 'check_netopiapayments_response'));
 		add_action( 'woocommerce_api_' . strtolower( get_class( $this ) ), array( $this, 'check_netopiapayments_response' ) );
 
 		// Save settings
@@ -165,7 +168,7 @@ class netopiapayments extends WC_Payment_Gateway {
 		        'default'     => array('credit_card'),
 		        'options'     => array(
 		          'credit_card'	      => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
-				  'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
+				//   'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
 		        //   'sms'			        => __('SMS' , 'netopia-payments-payment-gateway' ),
 		        //   'bank_transfer'		      => __( 'Bank Transfer', 'netopia-payments-payment-gateway' ),
 		          ),
@@ -199,12 +202,12 @@ class netopiapayments extends WC_Payment_Gateway {
   		if ( $this->payment_methods ) {  
   			$payment_methods = $this->payment_methods;	
   		}else{
-  			// $payment_methods = array('credit_card');
+  			 $payment_methods = array();
   		}
 		$checked ='';
   		$name_methods = array(
 		          'credit_card'	      => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
-		          'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
+		        //   'bitcoin'  => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
 				//   'sms'			        => __('SMS' , 'netopia-payments-payment-gateway' ),
 		        //   'bank_transfer'		      => __( 'Bank Transfer', 'netopia-payments-payment-gateway' ),
 		          );
@@ -216,6 +219,7 @@ class netopiapayments extends WC_Payment_Gateway {
 					?><div id="netopia-methods">Nu este setata nicio metoda de plata!</div><?php
 					break;
 				case count($payment_methods) == 1:
+					// Default is Credit/Debit Card (the ZERO index)
 					?><input type="hidden" name="netopia_method_pay" class="netopia-method-pay" id="netopia-method-<?php echo esc_attr($payment_methods[0]); ?>" value="<?php echo esc_attr($payment_methods[0]); ?>"/><?php
 					break;
 				case count($payment_methods) > 1:
@@ -443,7 +447,7 @@ class netopiapayments extends WC_Payment_Gateway {
 		
 		$name_methods = array(
 		          'credit_card' => __( 'Credit Card', 'netopia-payments-payment-gateway' ),
-		          'bitcoin' => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
+		        //   'bitcoin' => __( 'Bitcoin', 'netopia-payments-payment-gateway' )
 				//   'sms' => __('SMS' , 'netopia-payments-payment-gateway' ),
 		        //   'bank_transfer' => __( 'Bank Transfer', 'netopia-payments-payment-gateway' ),
 		          );
@@ -458,11 +462,11 @@ class netopiapayments extends WC_Payment_Gateway {
 				$objPmReq = new Netopia_Payment_Request_Transfer();	
 				$paymentUrl .= '/transfer';
 				break;
-			case 'bitcoin':	
-				require_once 'netopia/Payment/Request/Bitcoin.php';
-				$objPmReq = new Netopia_Payment_Request_Bitcoin();			
-				$paymentUrl = 'https://secure.mobilpay.ro/bitcoin'; //for both sanbox and live
-				break;
+			// case 'bitcoin':	
+			// 	require_once 'netopia/Payment/Request/Bitcoin.php';
+			// 	$objPmReq = new Netopia_Payment_Request_Bitcoin();			
+			// 	$paymentUrl = 'https://secure.mobilpay.ro/bitcoin'; //for both sanbox and live
+			// 	break;
 			default: // credit_card
 				require_once 'netopia/Payment/Request/Card.php';
 				$objPmReq = new Netopia_Payment_Request_Card();
@@ -566,7 +570,7 @@ class netopiapayments extends WC_Payment_Gateway {
 		require_once 'netopia/Payment/Request/Card.php';
 		require_once 'netopia/Payment/Request/Sms.php';
 		require_once 'netopia/Payment/Request/Transfer.php';
-		require_once 'netopia/Payment/Request/Bitcoin.php';
+		// require_once 'netopia/Payment/Request/Bitcoin.php';
 
 		require_once 'netopia/Payment/Request/Notify.php';
 		require_once 'netopia/Payment/Invoice.php';
@@ -590,7 +594,7 @@ class netopiapayments extends WC_Payment_Gateway {
 		
 		// Validate Input
 		if (empty($env_key) || empty($data)) {
-			wp_die(esc_html('Missing env_key or data !'));
+			die(esc_html('Missing env_key or data !'));
 		}
 
 		$msg_errors = array(
@@ -1070,7 +1074,7 @@ class netopiapayments extends WC_Payment_Gateway {
 	}
 
 	public function getNtpPluginInfo() {
-		$ntpPlugin_ver ="Version 1.4.3";
+		$ntpPlugin_ver ="Version 1.4.4";
 		return $ntpPlugin_ver;
 	}
 }
